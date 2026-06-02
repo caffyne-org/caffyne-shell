@@ -103,6 +103,7 @@ install_pacman_deps() {
         gtk-layer-shell
         libdbusmenu-gtk3
         cinnamon-desktop
+        gnome-bluetooth-3.0
 
         # Theming
         matugen
@@ -232,7 +233,7 @@ setup_matugen() {
         cat <<EOF >> "$matugen_conf"
 
 # Caffyne Shell Colors
-[[templates.caffyne]]
+[templates.caffyne]
 input_path = '~/.config/matugen/templates/caffyne-shell-colors.css'
 output_path = '~/.config/caffyne-shell/styles/colors.css'
 EOF

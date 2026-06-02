@@ -1,5 +1,8 @@
-
 spawn-at-startup "~/.config/caffyne-shell/start.sh"
+
+layout {
+    background-color "transparent"
+}
 
 layer-rule {
     match namespace="^awww-daemon$"
