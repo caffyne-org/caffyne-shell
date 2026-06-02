@@ -211,7 +211,7 @@ setup_matugen() {
     local matugen_conf="$matugen_config_dir/config.toml"
     local templates_dir="$matugen_config_dir/templates"
     local target_template="$templates_dir/caffyne-shell-colors.css"
-    local source_template="$INSTALL_DIR/caffyne-shell-colors.css"
+    local source_template="$INSTALL_DIR/matugen/caffyne-shell-colors.css"
 
     # 1. Ensure directories exist
     mkdir -p "$matugen_config_dir"
