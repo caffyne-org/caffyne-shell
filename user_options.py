@@ -111,7 +111,7 @@ class UserOptions:
             self.scheme_type = "scheme-tonal-spot"
             self.opacity = 1.0
             self.blur = False
-            self.border_style = "round"
+            self.border_style = "medium"
 
     class WorldClocks:
         def __init__(self):
@@ -122,7 +122,7 @@ class UserOptions:
 
     class Wallpaper:
         def __init__(self):
-            self.path = f"{get_relative_path('wallpapers/wall-0.jpg')}"
+            self.path = f"{get_relative_path('wallpapers/wall14.jpg')}"
 
     def __init__(self):
         self.user = self.User()
