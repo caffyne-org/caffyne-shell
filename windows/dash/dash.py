@@ -29,32 +29,6 @@ _PAGE_LABELS = {
 
 _PAGES_WITH_SEARCH = {"apps", "applets"}
 
-class DismissLayer(Window):
-    def __init__(self, on_dismiss, monitor_id, **kwargs):
-        self.event_box = EventBox()
-        self._blur_ctx = None
-        super().__init__(
-            anchor="left right top bottom",
-            layer="bottom",
-            keyboard_mode="none",
-            child=self.event_box,
-            monitor=monitor_id,
-            visible=False,
-            **kwargs,
-        )
-        GtkLayerShell.set_exclusive_zone(self, -1)
-        self.event_box.connect("button-release-event", lambda *_: on_dismiss())
-    def show(self, *_):
-        super().show()
-        if not self._blur_ctx:
-            self._blur_ctx = enable_blur(self)
-    def hide(self, *_):
-        if self._blur_ctx:
-            disable_blur(self._blur_ctx)
-            free_blur(self._blur_ctx)
-            self._blur_ctx = None
-        super().hide()
-
 class Dash(Window):
     def __init__(self, monitor, bar_manager):
         self._opening = False
@@ -108,7 +82,7 @@ class Dash(Window):
             style_classes=["dash"],
             layer="top",
             title="caffyne-shell-dash",
-            keyboard_mode="exclusive",
+            keyboard_mode="on-demand",
             anchor="top right bottom left",
             child=self.revealer,
             visible=False,
