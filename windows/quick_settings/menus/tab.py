@@ -75,7 +75,6 @@ class TabStack(Box):
         content,
         on_switch: Callable[[str], None] | None = None,
     ) -> Button:
-        print(f"add_tab: {name}, current buttons: {[n for n,_,_ in self._tab_buttons]}")
         self.tab_stack.add_named(content, name)
 
         is_first = len(self._tab_buttons) == 0

@@ -55,6 +55,12 @@ class TimeoutAdjuster(Box):
             **kwargs,
         )
 
+    def set_minutes(self, minutes: int):
+        self.minutes = max(1, minutes)
+        self.minutes_label.set_label(f"{self.minutes}m")
+        if self.on_change:
+            self.on_change(self.minutes)
+            
     def _adjust(self, delta: int):
         self.minutes = max(1, self.minutes + delta)
         self.minutes_label.set_label(f"{self.minutes}m")

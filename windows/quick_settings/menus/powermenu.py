@@ -6,6 +6,7 @@ from user_options import user_options
 from services.singletons import idle, battery
 from ..buttons import PowerModes
 
+
 class IdleTimeoutBox(Box):
     def __init__(
         self,
@@ -17,32 +18,22 @@ class IdleTimeoutBox(Box):
     ):
         self.timeout_name = timeout_name
 
-        saved = next(
-            (t for t in user_options.timeouts.list if t["name"] == timeout_name),
-            None,
-        )
-
-        self.pending_enabled = saved["enabled"]     if saved else True
-        self.pending_ac      = saved["timeout_ac"]  if saved else initial_ac_minutes
-        self.pending_bat     = saved["timeout_bat"] if saved else initial_bat_minutes
-
         self.enabled_switch = SmoothSwitch(
             style_classes=["smooth-switch"],
         )
-        self.enabled_switch.set_active(self.pending_enabled)
         self.enabled_switch.connect(
             "notify::active",
             lambda sw, _: setattr(self, "pending_enabled", sw.get_active()),
         )
 
         self.power_adjuster = TimeoutAdjuster(
-            initial_minutes=self.pending_ac,
+            initial_minutes=initial_ac_minutes,
             icon_name="plug-duotone",
             on_change=lambda mins: setattr(self, "pending_ac", mins),
         )
 
         self.bat_adjuster = TimeoutAdjuster(
-            initial_minutes=self.pending_bat,
+            initial_minutes=initial_bat_minutes,
             icon_name="battery-vertical-full-duotone",
             on_change=lambda mins: setattr(self, "pending_bat", mins),
         ) if battery.available else None
@@ -75,6 +66,48 @@ class IdleTimeoutBox(Box):
             **kwargs,
         )
 
+        # load initial state from user_options and snapshot it
+        self._load_and_snapshot(initial_ac_minutes, initial_bat_minutes)
+
+    def _load_and_snapshot(self, fallback_ac: int, fallback_bat: int):
+        saved = next(
+            (t for t in user_options.timeouts.list if t["name"] == self.timeout_name),
+            None,
+        )
+        ac  = saved["timeout_ac"]  if saved else fallback_ac
+        bat = saved["timeout_bat"] if saved else fallback_bat
+        ena = saved["enabled"]     if saved else True
+
+        self._set_values(ac, bat, ena)
+        self._take_snapshot()
+
+    def _set_values(self, ac: int, bat: int, enabled: bool):
+        """Update widgets without triggering dirty state via on_change."""
+        self.pending_ac      = ac
+        self.pending_bat     = bat
+        self.pending_enabled = enabled
+
+        self.enabled_switch.set_active(enabled)
+        self.power_adjuster.set_minutes(ac)
+        if self.bat_adjuster:
+            self.bat_adjuster.set_minutes(bat)
+
+    def _take_snapshot(self):
+        self._snapshot = self.get_updated_rule()
+
+    def is_dirty(self) -> bool:
+        return self.get_updated_rule() != self._snapshot
+
+    def reload(self):
+        """Reload from user_options and reset dirty state."""
+        saved = next(
+            (t for t in user_options.timeouts.list if t["name"] == self.timeout_name),
+            None,
+        )
+        if saved:
+            self._set_values(saved["timeout_ac"], saved["timeout_bat"], saved["enabled"])
+        self._take_snapshot()
+
     def get_updated_rule(self) -> dict:
         return {
             "name":        self.timeout_name,
@@ -82,6 +115,7 @@ class IdleTimeoutBox(Box):
             "timeout_bat": int(self.pending_bat),
             "enabled":     self.pending_enabled,
         }
+
 
 class PowerMenu(QSAppletPage):
     def __init__(self, parent=None, stack=None, **kwargs):
@@ -118,26 +152,43 @@ class PowerMenu(QSAppletPage):
             **kwargs,
         )
 
-        for child in self.timeout_boxes:
-            self.add(child)
+        for box in self.timeout_boxes:
+            self.add(box)
+
         if stack is not None:
             stack.connect("notify::visible-child", self._on_page_change)
+
         self.connect("realize", self._on_realize)
+
     def _on_realize(self, *_):
         window = self.get_toplevel()
         if window:
             window.connect("notify::visible", self._on_window_visibility)
 
     def _on_window_visibility(self, window, _):
-        if not window.is_visible():
-            self._apply_settings()
+        if window.is_visible():
+            self._reload()
+        else:
+            self._apply_if_dirty()
+
     def _on_page_change(self, *_):
         if self.stack.get_visible_child() is self:
-            return
-        self._apply_settings()
+            self._reload()
+        else:
+            self._apply_if_dirty()
 
-    def _apply_settings(self):
+    def _reload(self):
+        for box in self.timeout_boxes:
+            box.reload()
+
+    def _apply_if_dirty(self):
+        dirty_boxes = [box for box in self.timeout_boxes if box.is_dirty()]
+        if not dirty_boxes:
+            return
         updated_rules = [box.get_updated_rule() for box in self.timeout_boxes]
         user_options.timeouts.list = updated_rules
         idle.update_rules(updated_rules)
         user_options.save()
+        # re-snapshot so subsequent hide/show cycles start clean
+        for box in self.timeout_boxes:
+            box._take_snapshot()
