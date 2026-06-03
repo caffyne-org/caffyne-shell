@@ -29,14 +29,14 @@ class NotificationContainer(Box):
             style_classes=["notification-container"],
         )
         notifications.connect("notification-added", lambda _, nid: self._on_notified(nid))
-
+        self.add(Box(style="padding: 10px;"))
     def remove_notification(self, notification_widget):
         revealer = notification_widget.get_parent()
         if revealer:
             revealer.close(on_done = lambda: revealer.destroy())
 
         self._window.notify_removed()
-        if len(self.get_children()) == 0:
+        if len(self.get_children()) == 1:
             self._window.set_visible(False)
 
     def _on_notified(self, nid: int):
@@ -54,7 +54,6 @@ class NotificationContainer(Box):
                 popup=True,
             )
             revealer = AppletReveal(
-
                 direction="down",
                 child=widget,
             )
@@ -146,8 +145,8 @@ class NotificationWidget(EventBox):
             line_wrap="word-char",
             h_align="start",
             h_expand=True,
+            v_expand=True,
             ellipsization="end",
-
             style_classes=["notification-body"],
             visible=bool(notification.body),
         )

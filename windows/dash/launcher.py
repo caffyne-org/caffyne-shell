@@ -5,6 +5,7 @@ from fabric.widgets.button import Button
 from fabric.widgets.entry import Entry
 from ..launcher import get_usage_count, load_usage, increment_usage
 from thefuzz import process, fuzz
+from utils.dispatch import dispatch_app
 from fabric.utils import get_desktop_applications, DesktopApp
 from .components import DashPage
 from gi.repository import Gdk
@@ -64,7 +65,7 @@ class DashLauncherAppItem(Button):
         
     def launch(self):
         increment_usage(self._app)
-        self._app.launch()
+        dispatch_app(self._app)
         self._launcher.toggle()
 
 class DashLauncherPage(DashPage):

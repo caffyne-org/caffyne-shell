@@ -75,6 +75,7 @@ class TabStack(Box):
         content,
         on_switch: Callable[[str], None] | None = None,
     ) -> Button:
+        print(f"add_tab: {name}, current buttons: {[n for n,_,_ in self._tab_buttons]}")
         self.tab_stack.add_named(content, name)
 
         is_first = len(self._tab_buttons) == 0
@@ -106,16 +107,18 @@ class TabStack(Box):
                 button.remove_style_class("active")
         self.tab_stack.set_visible_child_name(name)
 
-    def remove_tab(self, name: str):
+    def remove_tab(self, name):
         for i, (tab_name, button, _) in enumerate(self._tab_buttons):
             if tab_name == name:
-                button.unparent()
+                self.tab_switcher.remove(button)
+                button.destroy()
                 self._tab_buttons.pop(i)
                 break
 
         child = self.tab_stack.get_child_by_name(name)
         if child:
             self.tab_stack.remove(child)
+            child.destroy()
 
         self._update_button_widths()
         self._sync_switcher_visibility()

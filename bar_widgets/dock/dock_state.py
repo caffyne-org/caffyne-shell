@@ -4,7 +4,7 @@ import os
 from loguru import logger
 from fabric.utils import get_relative_path
 
-DOCK_STATE_PATH = get_relative_path("../caffyne-shell/config/dock_state.json")
+DOCK_STATE_PATH = get_relative_path("../../config/dock_state.json")
 
 class DockEntry:
     def __init__(self, app_id: str, order: int = 0):

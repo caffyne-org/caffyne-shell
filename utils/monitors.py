@@ -1,7 +1,3 @@
-from services.singletons import wm
-from gi.repository import Gdk
-import os
-
 import os
 from gi.repository import Gdk
 from services.singletons import wm

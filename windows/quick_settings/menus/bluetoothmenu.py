@@ -254,7 +254,6 @@ class BluetoothAdapterTab:
             return
         self._destroyed = True
 
-        # Disconnect adapter signals first
         for sig_attr in ("_sig_added", "_sig_removed", "_sig_changed"):
             sig_id = getattr(self, sig_attr, None)
             if sig_id is not None:
@@ -264,7 +263,6 @@ class BluetoothAdapterTab:
                     pass
                 setattr(self, sig_attr, None)
 
-        # Destroy all device items (disconnects their signals too)
         for item in list(self._device_items.values()):
             try:
                 item.destroy()
@@ -272,8 +270,7 @@ class BluetoothAdapterTab:
                 pass
         self._device_items.clear()
 
-        GLib.idle_add(self._tab_stack.remove_tab, self._tab_name)
-
+        self._tab_stack.remove_tab(self._tab_name)
 
 class BluetoothMenu(QSAppletPage):
     def __init__(self, parent=None, stack=None, **kwargs):
@@ -332,8 +329,6 @@ class BluetoothMenu(QSAppletPage):
         if entry is None:
             return
         tab, sig_id = entry
-        # We hold the sig_id directly — no need to re-fetch the adapter
-        # (it may already be gone from the client by the time we're called)
         adapter = bluetooth.get_adapter(path)
         if adapter is not None:
             try:

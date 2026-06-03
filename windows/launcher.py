@@ -4,6 +4,7 @@ from fabric.widgets.button import Button
 from fabric.widgets.entry import Entry
 from fabric.widgets.image import Image
 from snippets import Applet, AppletPage, Icon, AnimatedScroll
+from utils.dispatch import dispatch_app
 from gi.repository import Gdk
 from thefuzz import process, fuzz
 from fabric.utils import get_desktop_applications, get_relative_path, DesktopApp
@@ -96,7 +97,7 @@ class LauncherAppItem(Button):
 
     def launch(self):
         increment_usage(self._app)
-        self._app.launch()
+        dispatch_app(self._app)
         self._launcher.toggle()
 
 class LauncherApplet(Applet):
