@@ -7,6 +7,9 @@ venv/
 
 plugins/*
 
+styles/colors.css
+styles/borders.css
+
 # Logs / misc
 *.log
 *.so
