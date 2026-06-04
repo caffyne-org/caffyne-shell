@@ -1,12 +1,26 @@
 import importlib.util
 import sys
 from pathlib import Path
+from fabric.utils import monitor_file
 
 PLUGIN_DIRS = [
     Path(__file__).parent / "plugins",
     Path.home() / ".config" / "caffyne-shell" / "plugins",
 ]
 
+_monitors = []
+
+def apply_plugin_css(app) -> None:
+    for plugin_dir in PLUGIN_DIRS:
+        if not plugin_dir.exists():
+            continue
+        for path in sorted(plugin_dir.iterdir()):
+            style = path / "style.css"
+            if style.exists():
+                app.set_stylesheet_from_file(str(style), append=True)
+                monitor = monitor_file(str(path))
+                monitor.connect("changed", lambda *_, s=style: app.set_stylesheet_from_file(str(s), append=True))
+                _monitors.append(monitor)
 
 def load_plugins(
     bar_widgets: dict,
@@ -44,7 +58,7 @@ def _load_one(
         sys.modules[module_name] = mod
         spec.loader.exec_module(mod)
     except Exception as exc:
-        print(f"[plugins] ✗ failed to load '{path.name}': {exc}")
+        print(f"[plugins] failed to load '{path.name}': {exc}")
         return
 
     name: str = getattr(mod, "NAME", path.name)
