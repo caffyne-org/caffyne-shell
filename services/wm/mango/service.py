@@ -67,10 +67,10 @@ class Mango(WMService):
 
         super().__init__(**kwargs)
 
-        self._initial_sync()
         GLib.Thread.new("mango-watch-monitors", self._watch_thread, "all-monitors")
         GLib.Thread.new("mango-watch-clients", self._watch_thread, "all-clients")
         # GLib.Thread.new("mango-watch-tags", self._watch_thread, "all-tags")
+        self._initial_sync()
 
         self.notify("is-available")
         self.emit("ready")
@@ -188,23 +188,17 @@ class Mango(WMService):
 
         self._windows = new_windows
         self.notify("windows")
+
+        # Update active_window_id from clients directly — don't defer
+        self._active_window_id = new_active_id
         self._resolve_active_window()
-
+        
     def _resolve_active_window(self, force_notify: bool = False) -> None:
-        """Set active_window to the focused window on the focused monitor."""
-        # If a monitor change just happened, force notify once clients catch up
-        if self._pending_monitor_change:
-            self._pending_monitor_change = False
-            force_notify = True
-
-        new_active_id = next(
-            (wid for wid, w in self._windows.items()
-             if w.is_focused and self._get_window_output(w) == self._active_output),
-            -1,
-        )
-        if new_active_id != self._active_window_id or force_notify:
-            self._active_window_id = new_active_id
-            self._active_window = self._windows.get(new_active_id)
+        # Drop the _pending_monitor_change flag entirely.
+        # Instead, always re-resolve from current state — it's cheap.
+        new_active = self._windows.get(self._active_window_id)
+        if new_active != self._active_window or force_notify:
+            self._active_window = new_active
             self.notify("active-window")
 
     def _get_window_output(self, window) -> str:
@@ -217,32 +211,32 @@ class Mango(WMService):
     # ------------------------------------------------------------------
 
     def _watch_thread(self, topic: str) -> bool:
-        try:
-            client = Gio.SocketClient()
-            conn: Gio.SocketConnection = client.connect(self._socket_address, None)
-            conn.get_output_stream().write_all(f"watch {topic}\n".encode(), None)
+        RETRY_DELAY_MS = 2000
+        while True:
+            try:
+                client = Gio.SocketClient()
+                conn = client.connect(self._socket_address, None)
+                conn.get_output_stream().write_all(f"watch {topic}\n".encode(), None)
+                inp = Gio.DataInputStream.new(conn.get_input_stream())
+                while True:
+                    line, _ = inp.read_line(None)
+                    if line is None:
+                        break
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        data = json.loads(line.decode())
+                    except Exception as e:
+                        logger.error(f"[MangoService] watch {topic!r} JSON decode error: {e}")
+                        continue
+                    idle_add(self._dispatch_watch_event, topic, data)  # <-- this was missing
+                conn.close(None)
+            except Exception as e:
+                logger.error(f"[MangoService] watch {topic!r} error: {e}")
 
-            inp = Gio.DataInputStream.new(conn.get_input_stream())
-            while True:
-                line, _ = inp.read_line(None)
-                if line is None:
-                    break
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    data = json.loads(line.decode())
-                except Exception as e:
-                    logger.error(f"[MangoService] watch {topic!r} JSON decode error: {e}")
-                    continue
-                idle_add(self._dispatch_watch_event, topic, data)
-
-            conn.close(None)
-        except Exception as e:
-            logger.error(f"[MangoService] watch thread {topic!r} died: {e}")
-
-        logger.warning(f"[MangoService] watch thread {topic!r} ended")
-        return False
+            logger.warning(f"[MangoService] watch {topic!r} reconnecting in {RETRY_DELAY_MS}ms")
+            GLib.usleep(RETRY_DELAY_MS * 1000)
 
     def _dispatch_watch_event(self, topic: str, data: dict) -> None:
         if "error" in data:
