@@ -218,10 +218,15 @@ setup_matugen() {
     mkdir -p "$templates_dir"
 
     if [[ ! -f "$matugen_conf" ]]; then
-        info "Initializing Matugen config.toml..."
-        echo "[config]" > "$matugen_conf"
+        info "Creating Matugen config.toml..."
+        touch "$matugen_conf"
     fi
 
+    if ! grep -q "^\[config\]$" "$matugen_conf"; then
+        info "Adding [config] section..."
+        printf "[config]\n" >> "$matugen_conf"
+    fi
+    
     if grep -q "\[templates.caffyne\]" "$matugen_conf"; then
         info "Matugen config entry already exists — skipping append."
     else

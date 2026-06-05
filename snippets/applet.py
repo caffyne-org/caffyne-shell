@@ -58,6 +58,7 @@ class Applet(Box):
         )
 
         self._stack = HackedStack(
+            style_classes=["applet-stack"],
             transition_type="slide-left-right",
             bezier_curve=(0.34, 1.3, 0.64, 1.0),
             duration=0.45,

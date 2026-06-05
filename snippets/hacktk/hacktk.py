@@ -1,8 +1,12 @@
+import math
+import cairo
 from cffi import FFI
+from typing import cast
 from fabric.widgets.stack import Stack
 from fabric.widgets.revealer import Revealer
 from snippets.animator import Animator
 from fabric.utils import get_relative_path
+
 ffi = FFI()
 
 ffi.cdef("""
@@ -61,6 +65,31 @@ class HackedStack(Stack):
         libhacktk.gtk_stack_begin_transition(self._ptr, SLIDE_LEFT_RIGHT)
         self.animator.pause()
         self.animator.play()
+
+    def do_draw(self, cr: cairo.Context):
+        cr.save()
+        width = self.get_allocated_width()
+        height = self.get_allocated_height()
+        radius = cast(
+            int,
+            self.get_style_context().get_property(
+                "border-radius", self.get_state_flags()
+            ),
+        )
+        cr.move_to(radius, 0)
+        cr.line_to(width - radius, 0)
+        cr.arc(width - radius, radius, radius, -(math.pi / 2), 0)
+        cr.line_to(width, height - radius)
+        cr.arc(width - radius, height - radius, radius, 0, (math.pi / 2))
+        cr.line_to(radius, height)
+        cr.arc(radius, height - radius, radius, (math.pi / 2), math.pi)
+        cr.line_to(0, radius)
+        cr.arc(radius, radius, radius, math.pi, (3 * (math.pi / 2)))
+        cr.close_path()
+        cr.clip()
+        Stack.do_draw(self, cr)
+        cr.restore()
+        return True
 
     @property
     def bezier_curve(self):

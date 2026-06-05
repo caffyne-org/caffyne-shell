@@ -191,3 +191,6 @@
     transition: background-color 0.3s ease;
 }
 
+.dash-stack {
+    border-radius: apply(radius-l);
+}

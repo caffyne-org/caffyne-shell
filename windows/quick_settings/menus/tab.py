@@ -40,6 +40,7 @@ class TabStack(Box):
             style_classes=["qs-device-switcher"],
         )
         self.tab_stack = HackedStack(
+            style_classes=["applet-stack"],
             transition_type=transition_type,
             bezier_curve=(0.34, 1.3, 0.64, 1.0),
             duration=0.45,

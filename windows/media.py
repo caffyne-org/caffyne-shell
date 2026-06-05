@@ -9,7 +9,7 @@ from fabric.widgets.image import Image
 from snippets import Icon, FlatScale
 from services.player import PlayerService
 from icons import MediaIcon
-from snippets import ClippingBox
+from snippets import ClippingBox, HackedStack
 from services.singletons import player_manager
 from utils.helpers import load_blurred_pixbuf, load_scaled_pixbuf, load_cover_pixbuf
 
@@ -184,7 +184,7 @@ class PlayerStackSwitcher(CenterBox):
         self._applet: "MediaApplet | None" = None
 
         self.title = Label(
-            style="padding: 10px; font-size: 14px;",
+            style="padding: 8px 10px; font-size: 14px;",
             ellipsization="end",
             max_chars_width=20,
         )
@@ -230,12 +230,14 @@ class PlayerStackSwitcher(CenterBox):
             return
         current = self._applet.get_current_name()
         i = names.index(current) if current in names else 0
-        self.stack.set_visible_child_name(names[(i + direction) % len(names)])
+        target_name = names[(i + direction) % len(names)]
+        self._applet.player_stack.transition_type = "slide-left" if direction > 0 else "slide-right"
+        self._applet.player_stack.set_visible_child_name(target_name)
 
 class MediaApplet(Box):
     def __init__(self, parent, **kwargs):
         self._players: dict[str, MediaPlayer] = {}
-        self.player_stack = Stack(transition_type="slide-left-right")
+        self.player_stack = HackedStack(style_classes=["applet-stack"], bezier_curve=(0.34, 1.3, 0.64, 1.0), duration=0.45)
         self.switcher = PlayerStackSwitcher(self.player_stack)
 
         super().__init__(
@@ -264,7 +266,7 @@ class MediaApplet(Box):
         media = MediaPlayer(name, service, self)
         self._players[name] = media
         self.player_stack.add_named(media, name)
-        self.player_stack.set_visible_child_name(name)
+        self.player_stack.set_visible_child(media)
         self.switcher.sync()
         self.sync()
 

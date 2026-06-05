@@ -4,8 +4,8 @@ from fabric.widgets.box import Box
 from fabric.widgets.label import Label
 from fabric.widgets.button import Button
 from fabric.widgets.centerbox import CenterBox
-from gi.repository import Gtk
-from snippets import Icon
+from gi.repository import Gtk, GLib
+from snippets import Icon, HackedStack
 
 DAYS_OF_WEEK = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
 
@@ -122,19 +122,14 @@ class CalendarWidget(Box):
         self._month = today.month
         self._selected_day = today.day
 
-        self._month_label = Label(
-            style_classes=["calendar-month-label"],
-        )
+        self._month_label = Label(style_classes=["calendar-month-label"])
 
-        self._grid_container = Box(
-            orientation="v",
-            h_align="center",
-        )
+        self._stack = HackedStack(style_classes=["applet-stack"], bezier_curve=(0.34, 1.3, 0.64, 1.0), duration=0.45)
 
         nav = CenterBox(
             h_expand=True,
             start_children=self._month_label,
-            end_children=Box(spacing=12,children=[
+            end_children=Box(spacing=12, children=[
                 Button(
                     style_classes=["applet-misc-button"],
                     child=Icon(icon_name="arrow-left-duotone"),
@@ -150,16 +145,22 @@ class CalendarWidget(Box):
 
         super().__init__(
             orientation="v",
-            spacing=8,
+            spacing=0,
             h_align="center",
             h_expand=True,
             style_classes=["applet-menu"],
-            children=[nav, self._grid_container],
+            children=[nav, self._stack],
         )
 
         self._rebuild()
 
     def _change_month(self, delta: int):
+        # Set slide direction based on which way we're going
+        if delta > 0:
+            self._stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT)
+        else:
+            self._stack.set_transition_type(Gtk.StackTransitionType.SLIDE_RIGHT)
+
         month = self._month + delta
         year = self._year
         if month > 12:
@@ -180,14 +181,8 @@ class CalendarWidget(Box):
         self._selected_day = day
 
     def _rebuild(self):
-
-        for child in self._grid_container.get_children():
-            self._grid_container.remove(child)
-            child.destroy()
-
-        self._month_label.set_label(
-            datetime.date(self._year, self._month, 1).strftime("%B %Y")
-        )
+        # Snapshot old children to destroy after transition
+        old_children = self._stack.get_children()
 
         grid = CalendarGrid(
             self._year,
@@ -195,13 +190,36 @@ class CalendarWidget(Box):
             self._selected_day,
             self._on_day_selected,
         )
-        self._grid_container.add(grid)
-        self._grid_container.show_all()
+        grid.show_all()
+
+        name = f"{self._year}-{self._month}"
+        self._stack.add_named(grid, name)
+        self._stack.set_visible_child_name(name)
+
+        self._month_label.set_label(
+            datetime.date(self._year, self._month, 1).strftime("%B %Y")
+        )
+
+        # Prune old children after the transition completes
+        def _prune():
+            for child in old_children:
+                if child in self._stack.get_children():
+                    self._stack.remove(child)
+                    child.destroy()
+            return False  # Don't repeat
+
+        GLib.timeout_add(500, _prune)
+
     def reset(self):
         today = datetime.date.today()
         self._year = today.year
         self._month = today.month
         self._selected_day = today.day
+
+        # Eagerly clear the stack — no animation needed on reset
+        for child in self._stack.get_children():
+            self._stack.remove(child)
+            child.destroy()
         self._rebuild()
 
 class CalendarApplet(Box):

@@ -16,6 +16,10 @@
     transition: background-color 0.3s ease;
 }
 
+.applet-stack {
+    border-radius: apply(radius-m);
+}
+
 .applet-misc-button.battery {
     padding: 0px 10px;
     border-radius: apply(radius-m);

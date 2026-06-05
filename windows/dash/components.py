@@ -152,6 +152,7 @@ class DashPage(Box):
 class DashGroup(HackedStack):
     def __init__(self, transition_type):
         super().__init__(
+            style_classes=["dash-stack"],
             h_expand=False,
             h_align="center",
             transition_type=transition_type,
