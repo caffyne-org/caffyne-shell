@@ -23,7 +23,8 @@
     margin-left: 10px;
     padding-bottom: 12px;
 }
-.osd-label.updater {
+.osd-updater-title {
+    padding-left: 10px;
     font-size: 15px;
     margin-left: 0px;
 }

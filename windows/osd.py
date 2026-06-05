@@ -35,19 +35,21 @@ class OSDUpdate(Box):
     def __init__(self, on_dismiss=None, **kwargs):
         self._commits_behind = 0
         self._on_dismiss_cb = on_dismiss
-        self._icon = Icon(icon_name="shooting-star-duotone", icon_size=48)
+        self._icon = Icon(icon_name="shooting-star-duotone", icon_size=32)
  
         self._title = Label(
             label="Update Available",
-            h_align="center",
-            style_classes=["osd-label", "updater"],
+            v_expand=True,
+            v_align="center",
+            style_classes=["osd-updater-title"],
         )
         self._subtitle = Label(
             label="",
-            h_align="center",
-            style="font-size: 11px; opacity: 0.6;",
+            v_expand=True,
+            v_align="center",
+            style="padding-left: 8px; font-size: 11px; opacity: 0.6;",
         )
- 
+
         self._btn_primary = Button(
             h_expand=True,
             child=Label(label="Update"),
@@ -62,27 +64,27 @@ class OSDUpdate(Box):
         )
  
         self._actions = Box(
-            orientation="v",
+            orientation="h",
             homogeneous=True,
             spacing=8,
             children=[self._btn_primary, self._btn_secondary],
         )
  
         super().__init__(
-            orientation="h",
+            orientation="v",
             spacing=12,
             h_expand=True,
             h_align="fill",
             v_align="center",
             style_classes=["osd-row"],
             children=[
-                self._icon,
                 Box(
-                    orientation="v",
-                    spacing=2,
+                    orientation="h",
+                    spacing=0,
+                    v_expand=True,
                     v_align="center",
                     h_expand=True,
-                    children=[self._title, self._subtitle],
+                    children=[self._icon, self._title, self._subtitle],
                 ),
                 self._actions,
             ],
@@ -97,7 +99,7 @@ class OSDUpdate(Box):
         n = self._commits_behind
         self._icon.set_property("icon-name", "shooting-star-duotone")
         self._title.set_label("Update Available")
-        self._subtitle.set_label(f"{n} new commit{'s' if n != 1 else ''} on origin")
+        self._subtitle.set_label(f"· {n} new commit{'s' if n != 1 else ''}")
         self._set_buttons("Update", "Later")
         self._actions.set_visible(True)
  
