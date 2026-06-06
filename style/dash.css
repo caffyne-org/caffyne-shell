@@ -158,7 +158,7 @@
     min-width: 174px;
     min-height: 174px;
     /* padding: 51px; */
-    background-color: var(--background);
+    background-color: var(--surface);
     border-radius: apply(radius-l);
 }
 

@@ -116,14 +116,14 @@ class LauncherGridItem(Button):
             h_align="center",
             v_align="center",
             children=[
-                Image(v_expand=True, v_align="end", icon_name=app.icon_name, icon_size=24),
+                Image(v_expand=True, v_align="end", icon_name=app.icon_name, icon_size=28),
                 Label(
                     v_expand=True, v_align="start",
                     label=app.display_name or "",
                     h_align="center",
                     ellipsization="end",
                     max_chars_width=10,
-                    style="font-size: 14px;",
+                    style="font-size: 11px;",
                 ),
             ],
         )
@@ -270,7 +270,7 @@ class LauncherApplet(Applet):
             self._entry.grab_focus()
             self._entry.set_position(-1)
         return False
-    
+
     def _on_entry_key_press(self, widget, event):
         if event.keyval == Gdk.KEY_Down:
             if self._grid_mode:
@@ -283,7 +283,7 @@ class LauncherApplet(Applet):
                     children[0].grab_focus()
             return True
         return False
-    
+
     def _on_visibility_changed(self, *_):
         if not self.window.get_visible():
             self._grid_mode = user_options.launcher.grid
