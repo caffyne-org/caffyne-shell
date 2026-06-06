@@ -1778,25 +1778,26 @@ class BarManager:
             dash = self._dashes.get(monitor)
             if dash:
                 dash.applets.refresh_bar_state()
-            if not any(m == monitor for m, _ in self._bars):
-                self._cleanup_monitor(monitor)
+
         else:
             for key in [k for k in self._bars if k[0] == monitor]:
                 self._bars.pop(key).destroy()
-            self._cleanup_monitor(monitor)
+
+            dash = self._dashes.get(monitor)
+            if dash:
+                dash.applets.refresh_bar_state()
 
     def _cleanup_monitor(self, monitor: Gdk.Monitor) -> None:
-        for collection in (self._notifications, self._dashes, self._osds):
+        for collection in (self._notifications):
             widget = collection.pop(monitor, None)
             if widget:
                 widget.destroy()
 
-    def _on_monitor_added(self, display: Gdk.Display, monitor: Gdk.Monitor) -> None:
-        for i in range(display.get_n_monitors()):
-            if display.get_monitor(i) == monitor:
-                self._add_bar(monitor, i)
-                break
-        return False
+    def _on_monitor_removed(self, display, monitor):
+        for key in [k for k in self._bars if k[0] == monitor]:
+            self._bars.pop(key).destroy()
+
+        self._cleanup_monitor(monitor)
 
     def _on_monitor_removed(self, display: Gdk.Display, monitor: Gdk.Monitor) -> None:
         self._remove_bar(monitor)
@@ -1806,13 +1807,11 @@ class BarManager:
         active_output = wm.active_output
 
         active_monitor = None
-        for (monitor, _), bar in self._bars.items():
-            if get_connector_from_monitor_id(bar.monitor_id) == active_output:
-                active_monitor = monitor
-                break
 
-        if active_monitor is None:
-            for monitor, dash in self._dashes.items():
+        for i in range(self._display.get_n_monitors()):
+            monitor = self._display.get_monitor(i)
+
+            if get_connector_from_monitor_id(i) == active_output:
                 active_monitor = monitor
                 break
 
