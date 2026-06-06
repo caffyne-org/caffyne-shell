@@ -379,16 +379,19 @@ class TimerWidget(Box):
             icon_size=16,
         )
 
+        self.left_icon = Icon(icon_name="clock-countdown-duotone", icon_size=16)
+
         super().__init__(
             style_classes=["clock-timer-widget"],
             spacing=6,
             children=[
-                Box(
-                    style_classes=["clock-timer-widget-button"],
-                    children=Icon(
-                    icon_name="clock-countdown-duotone",
-                    icon_size=16,
-                )
+            Button(
+                style_classes=["clock-timer-widget-button"],
+                child=self.left_icon,
+                on_clicked=lambda *_: (
+                    timer.set_do_not_disturb(not timer.do_not_disturb) if timer.alarm_set
+                    else None
+                ),
             ),
             Overlay(
                 child=self.timeout_adjuster,
@@ -407,6 +410,7 @@ class TimerWidget(Box):
 
         timer.connect("notify::alarm-display", self._on_alarm_display_change)
         timer.connect("notify::alarm-set", self._on_alarm_set_change)
+        timer.connect("notify::do-not-disturb", self._on_dnd_change)
 
     def _on_alarm_display_change(self, *_):
         self.alarm_label.set_label(timer.alarm_display)
@@ -418,6 +422,18 @@ class TimerWidget(Box):
         self.play_stop_icon.set_icon_name(
             "stop-duotone" if alarm_set else "play-duotone"
         )
+        self._update_left_icon()
+
+    def _on_dnd_change(self, *_):
+        self._update_left_icon()
+
+    def _update_left_icon(self):
+        if timer.alarm_set and timer.do_not_disturb:
+            self.left_icon.set_icon_name("bell-simple-slash-duotone")
+        elif timer.alarm_set:
+            self.left_icon.set_icon_name("bell-simple-z-duotone")
+        else:
+            self.left_icon.set_icon_name("clock-countdown-duotone")
 
 class ClockApplet(Applet):
     def __init__(self, parent, **kwargs):

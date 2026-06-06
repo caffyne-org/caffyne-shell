@@ -988,7 +988,7 @@ class GroupWrapper(Box):
 
 class DraggableSection(Box):
     def __init__(self, section_name: str, bar: "Bar", **kwargs):
-        super().__init__(style_classes=["draggable-section"], **kwargs)
+        super().__init__(style_classes=["draggable-section"] + [section_name], **kwargs)
         self.section_name = section_name
         self.bar = bar
         self._placeholder: DropPlaceholder | None = None

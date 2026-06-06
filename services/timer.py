@@ -29,7 +29,8 @@ class TimerService(Service):
         self._alarm_trigger_time: datetime | None = None
         self._alarm_callback: Callable[[], None] | None = None
         self._alarm_stop_requested = False
-
+        self._do_not_disturb = False
+        
     @Signal
     def stopwatch_started(self) -> None: ...
 
@@ -84,6 +85,15 @@ class TimerService(Service):
         if self._alarm_triggered and self._alarm_trigger_time:
             return -(datetime.now() - self._alarm_trigger_time).total_seconds()
         return (self._alarm_time - datetime.now()).total_seconds()
+    
+    @Property(bool, "read-write", default_value=False)
+    def do_not_disturb(self) -> bool:
+        return self._do_not_disturb
+
+    @do_not_disturb.setter
+    def do_not_disturb(self, value: bool):
+        self._do_not_disturb = value
+        self.notify("do-not-disturb")
 
     @Property(str, "readable", default_value="")
     def alarm_display(self) -> str:
@@ -188,6 +198,8 @@ class TimerService(Service):
         self._alarm_trigger_time = None
         self._alarm_callback = None
         self._alarm_stop_requested = True
+        self._do_not_disturb = False
+        self.notify("do-not-disturb")
         self._notify_alarm()
         self.emit("alarm-cancelled")
 
@@ -207,11 +219,19 @@ class TimerService(Service):
                 break
             time.sleep(1)
 
+    def set_do_not_disturb(self, value: bool):
+        self._do_not_disturb = value
+        self.notify("do-not-disturb")
+
     def _trigger_alarm_main_thread(self):
         self._alarm_triggered = True
         self._alarm_trigger_time = datetime.now()
         self._notify_alarm()
-        self.emit("alarm-triggered-signal")
+        if self._do_not_disturb:
+            self._do_not_disturb = False
+            self.notify("do-not-disturb")
+        else:
+            self.emit("alarm-triggered-signal")
         if self._alarm_callback:
             try:
                 self._alarm_callback()

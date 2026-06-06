@@ -69,11 +69,11 @@
     padding: 0px 2px 0px 2px;
 }
 
-.left .bar-button.variant-scale-label {
+.bar-widget .left .bar-button.variant-scale-label {
     padding-right: 0px;
 }
 
-.left .bar-button.variant-scale {
+.bar-widget .left .bar-button.variant-scale {
     padding-right: 0px;
 }
 
@@ -85,12 +85,12 @@
     padding-left: 0px;
 }
 
-.left * {
+.bar-widget .left * {
     /* border: 2px solid red; */
     padding-right: 0px;
 }
 
-.right * {
+.bar-widget .right * {
     padding-left: 0px;
 }
 
