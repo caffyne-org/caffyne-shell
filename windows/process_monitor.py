@@ -203,7 +203,7 @@ class ProcessMenuItem(Box):
                 self.mem_label,
                 Button(
                     style_classes=["process-menu-button"],
-                    child=Icon(icon_name="x-duotone"),
+                    child=Icon(icon_name="x"),
                     on_clicked=lambda *_: process_monitor.kill_process(self.process_dict['pid']),
                 ),
             ],

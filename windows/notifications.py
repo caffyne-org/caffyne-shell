@@ -89,18 +89,17 @@ class NotificationWidget(EventBox):
             min_value=0,
             max_value=1,
             line_width=2,
-            size=[26, 26],
+            size=[28, 28],
         ) if popup else Box()
 
         self.header = Box(
             h_expand=True,
-            spacing=8,
-            style="padding: 4px 0px;" if not popup else "",
+            spacing=4,
+            # style="padding: 4px 0px;" if not popup else "",
             children=[
                 Image(icon_name=notification.app_icon, icon_size=16) if notification.app_icon else Icon(icon_name="bell-simple-duotone"),
                 Label(style="opacity: 0.6; font-size: 11px;", label=notification.app_name),
                 Box(
-
                     h_expand=True,
                     spacing=12,
                     h_align="end",
@@ -144,15 +143,27 @@ class NotificationWidget(EventBox):
             line_wrap="word-char",
             h_align="start",
             h_expand=True,
-            v_expand=True,
+            # v_expand=True,
             ellipsization="end",
-            style_classes=["notification-body"],
+            style_classes=["notification-body"] if popup else ["notification-body", "history"],
             visible=bool(notification.body),
         )
         
         self.desc_label.set_xalign(0)
         self.desc_label.set_lines(2)
-        self.desc_label.set_size_request(-1, self.desc_label.get_layout().get_pixel_size()[1])
+        if popup:
+            def on_map(label, *_):
+                layout = label.get_layout()
+                line_count = layout.get_line_count()
+                
+                if line_count <= 1:
+                    _, line_height = layout.get_pixel_size()
+                    label.set_size_request(-1, line_height)
+                else:
+                    self.desc_label.set_size_request(-1, layout.get_pixel_size()[1])
+                label.disconnect_by_func(on_map)
+
+            self.desc_label.connect("map", on_map)
 
         self.content = Box(
             spacing=14,
@@ -160,6 +171,7 @@ class NotificationWidget(EventBox):
                 ClippingBox(style_classes=["notification-image-container"], children=image_widget),
                 Box(
                     orientation="v",
+                    # spacing=6 if not popup else 0,
                     children=[
                         Label(
                             ellipsization="end",

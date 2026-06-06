@@ -1,7 +1,7 @@
 .notification {
-    min-width: 320px;
-    min-height: 90px;
-    padding: 18px;
+    min-width: 330px;
+    /* min-height: 90px; */
+    padding: 12px 12px 12px 18px;
     background-color: var(--background);
     border-radius: apply(radius-l);
     margin: 8px;
@@ -27,9 +27,12 @@
 .notification-summary {
     font-size: 14px;
     font-weight: bold;
+    margin-top: 2px;
 }
 
 .notification-body {
+    font-size: 14px;
+    margin-top: 1px;
     opacity: 0.6;
 }
 
@@ -60,7 +63,7 @@
     min-width: 288px;
     min-height: 78px;
     border-radius: apply(radius-m);
-    padding: 12px;
+    padding: 6px 6px 12px 12px;
     background-color: var(--surface_container);
 }
 
