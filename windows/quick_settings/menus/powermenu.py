@@ -20,10 +20,7 @@ class IdleTimeoutBox(Box):
 
         self.enabled_switch = SmoothSwitch(
             style_classes=["smooth-switch"],
-        )
-        self.enabled_switch.connect(
-            "notify::active",
-            lambda sw, _: setattr(self, "pending_enabled", sw.get_active()),
+            on_user_toggle=lambda state: setattr(self, "pending_enabled", state),
         )
 
         self.power_adjuster = TimeoutAdjuster(
@@ -66,7 +63,6 @@ class IdleTimeoutBox(Box):
             **kwargs,
         )
 
-        # load initial state from user_options and snapshot it
         self._load_and_snapshot(initial_ac_minutes, initial_bat_minutes)
 
     def _load_and_snapshot(self, fallback_ac: int, fallback_bat: int):
@@ -99,7 +95,6 @@ class IdleTimeoutBox(Box):
         return self.get_updated_rule() != self._snapshot
 
     def reload(self):
-        """Reload from user_options and reset dirty state."""
         saved = next(
             (t for t in user_options.timeouts.list if t["name"] == self.timeout_name),
             None,
@@ -120,6 +115,7 @@ class IdleTimeoutBox(Box):
 class PowerMenu(QSAppletPage):
     def __init__(self, parent=None, stack=None, **kwargs):
         self.stack = stack
+        self.parent = parent
         self.timeout_boxes = [
             IdleTimeoutBox(
                 label="Dim Screen",
@@ -158,9 +154,8 @@ class PowerMenu(QSAppletPage):
         self.connect("realize", self._on_realize)
 
     def _on_realize(self, *_):
-        window = self.get_toplevel()
-        if window:
-            window.connect("notify::visible", self._on_window_visibility)
+        if self.parent:
+            self.parent.connect("notify::visible", self._on_window_visibility)
 
     def _on_window_visibility(self, window, _):
         if window.is_visible():
