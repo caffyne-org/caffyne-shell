@@ -33,6 +33,7 @@ class KeyboardMenu(QSAppletPage):
                 style="min-width: 324px; min-height: 276px;",
                 max_content_size=(324, 276),
                 child=self.layouts,
+                overlay_scroll=True,
             ),
             **kwargs,
         )

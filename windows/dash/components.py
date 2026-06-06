@@ -130,7 +130,6 @@ class DashPage(Box):
     def __init__(self, grid_children):
         self.grid = DashGrid(children=grid_children)
         self.scroll = AnimatedScroll(
-
             h_expand=False,
             h_align="center",
             style_classes=["dash-grid"],

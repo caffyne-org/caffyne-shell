@@ -2,7 +2,7 @@ from fabric.widgets.box import Box
 from fabric.widgets.label import Label
 from fabric.widgets.button import Button
 from fabric.widgets.stack import Stack
-from snippets import Icon, SmoothSwitch, AnimatedScroll
+from snippets import Icon, SmoothSwitch
 from .menu import QSAppletPage
 from .tab import TabStack, TabMenu
 from services.singletons import bluetooth
