@@ -152,18 +152,8 @@ class NotificationWidget(EventBox):
         self.desc_label.set_xalign(0)
         self.desc_label.set_lines(2)
         if popup:
-            def on_map(label, *_):
-                layout = label.get_layout()
-                line_count = layout.get_line_count()
-                
-                if line_count <= 1:
-                    _, line_height = layout.get_pixel_size()
-                    label.set_size_request(-1, line_height)
-                else:
-                    self.desc_label.set_size_request(-1, layout.get_pixel_size()[1])
-                label.disconnect_by_func(on_map)
+            self.desc_label.set_size_request(-1, self.desc_label.get_layout().get_pixel_size()[1])
 
-            self.desc_label.connect("map", on_map)
 
         self.content = Box(
             spacing=14,
