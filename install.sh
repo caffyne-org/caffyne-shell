@@ -236,7 +236,7 @@ setup_matugen() {
 
 # Caffyne Shell Colors
 [templates.caffyne]
-input_path = '~/.config/matugen/templates/caffyne-shell-colors.css'
+input_path = '~/.config/caffyne-shell/matugen/caffyne-shell-colors.css'
 output_path = '~/.config/caffyne-shell/style/colors.css'
 EOF
     fi
