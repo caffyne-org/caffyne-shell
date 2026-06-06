@@ -25,6 +25,7 @@ from windows import (
 from snippets.popupwindow import PopupWindow
 from utils.helpers import popup_with_blur
 from utils.monitors import get_connector_from_monitor_id
+from utils.sounds import play_sound
 
 BAR_WIDGETS: dict[str, type] = {
     "Launcher":      LauncherButton,
@@ -1142,6 +1143,7 @@ class DraggableSection(Box):
                 child.event_box.remove_style_class("group-drop-invalid")
 
     def _handle_reorder_drop(self, parts, x, y, ctx, time):
+        print("reorder")
         src_monitor_id, src_bar_index_str, src_section_name, src_index_str = parts
         try:
             src_index = int(src_index_str)
@@ -1180,7 +1182,7 @@ class DraggableSection(Box):
         src_section.remove(wrapper)
         self.add(wrapper)
         self.reorder_child(wrapper, drop_index)
-
+        play_sound("widget-placed")
         Gtk.drag_finish(ctx, True, False, time)
         self.bar.sync_config()
         if src_bar is not self.bar:
@@ -1249,7 +1251,6 @@ class DraggableSection(Box):
         drop_index = self._drop_index_excluding_placeholder(x, y)
         self.add(new_wrapper)
         self.reorder_child(new_wrapper, drop_index)
-
         Gtk.drag_finish(ctx, True, False, time)
         self.bar.sync_config()
     def _handle_applet_drop(self, key: str, x: int, y: int, ctx, time):
@@ -1267,7 +1268,7 @@ class DraggableSection(Box):
         drop_index = self._drop_index_excluding_placeholder(x, y)
         self.add(wrapper)
         self.reorder_child(wrapper, drop_index)
-
+        play_sound("widget-placed")
         Gtk.drag_finish(ctx, True, False, time)
         self.bar.sync_config()
         self.bar.notify_dash_changed()

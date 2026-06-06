@@ -6,6 +6,7 @@ from services.wallpaper import WallpaperService
 import services.singletons as singletons
 from plugin_loader import load_plugins, apply_plugin_css
 from gi.repository import GLib
+from utils.sounds import play_sound
 setproctitle("caffyne-shell")
 
 app = Application("caffyne-shell")
@@ -26,4 +27,5 @@ bar_manager = bar.initialise_bars()
 singletons.bar_manager = bar_manager
 wallpaper_service = WallpaperService.get_instance()
 wallpaper_service.set_bar_manager(bar_manager)
+play_sound("session-start")
 app.run()

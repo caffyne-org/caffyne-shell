@@ -3,7 +3,7 @@ from fabric.widgets.box import Box
 from fabric.widgets.button import Button
 from fabric.widgets.entry import Entry
 from gi.repository import Gtk, Gdk
-
+from utils.sounds import play_sound
 import bar
 from .components import DashPage
 from snippets import Icon
@@ -253,6 +253,7 @@ class DashAppletPage(DashPage):
                     wrapper.destroy_popups()
                 section.remove(wrapper)
                 wrapper.destroy()
+                play_sound("widget-removed")
                 Gtk.drag_finish(ctx, True, False, time)
                 owning_bar.sync_config()
                 return
@@ -307,7 +308,7 @@ class DashAppletPage(DashPage):
                 remaining_wrapper = WidgetWrapper(remaining_key, remaining_widget, variant=remaining_var)
                 section.add(remaining_wrapper)
                 section.reorder_child(remaining_wrapper, group_pos)
-
+            play_sound("widget-removed")
             Gtk.drag_finish(ctx, True, False, time)
             owning_bar.sync_config()
             return

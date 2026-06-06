@@ -10,8 +10,8 @@ class BluetoothApplet(Applet):
         super().__init__(main_menu=BluetoothMenu(stack=None), **kwargs)
 
 class PowerApplet(Applet):
-    def __init__(self, *args, **kwargs):
-        super().__init__(main_menu=PowerMenu(stack=None), **kwargs)
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(main_menu=PowerMenu(parent=parent, stack=None), **kwargs)
 
 class KeyboardApplet(Applet):
     def __init__(self, *args, **kwargs):

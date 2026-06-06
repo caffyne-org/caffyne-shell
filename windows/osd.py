@@ -5,7 +5,7 @@ from fabric.widgets.eventbox import EventBox
 from fabric.widgets.button import Button
 from icons import VolumeIcon
 from snippets import Icon, AnimatedScale, DashReveal, enable_blur, disable_blur, free_blur, trace_widget_regions
-from services.singletons import audio, brightness, wm, timer
+from services.singletons import audio, brightness, wm, timer, battery
 from gi.repository import GLib, Gdk
 from user_options import user_options
 from utils.monitors import get_connector_from_monitor_id
@@ -15,6 +15,7 @@ from snippets.blur.region_trace import trace_widget_regions
 from snippets.blur.blur import set_blur_regions
 from snippets.dashreveal import _ease_out_expo
 from utils.update_checker import check_for_updates, do_pull, restart_shell
+from utils.sounds import play_sound
 
 # POWER_PROFILE_ICONS = {
 #     "power-saver": "leaf-duotone",
@@ -218,6 +219,7 @@ class OSD(WaylandWindow):
         self._speaker_muted_handler = None
         self._blur_ctx = None
         self._saved_brightness = 0
+        self._battery_state = None
         self._monitor_connector = get_connector_from_monitor_id(monitor)
         self._volume_scale = AnimatedScale(
             style_classes=["scale"],
@@ -307,13 +309,19 @@ class OSD(WaylandWindow):
         self.brightness_bar.scale.connect("value-changed", self._on_brightness_slider_changed)
         self.brightness_bar.scale.connect("scroll-event", self._on_brightness_scroll)
 
+        self.battery_icon = OSDIcon(icon_name="battery-charging-duotone", label_text="Charging")
+        self.battery_low_icon = OSDIcon(icon_name="battery-low-duotone", label_text="Low Battery")
+        self.battery_critical_icon = OSDIcon(icon_name="battery-warning-duotone", label_text="Critical!")
+
         if audio.speaker:
             self._bind_speaker(audio.speaker)
         audio.connect("speaker-changed", self._on_speaker_changed)
         brightness.connect("screen", self._on_brightness_changed)
         wm.keyboard_layouts.connect("notify::current-name", self._on_layout)
         timer.connect("alarm-triggered-signal", self._on_alarm_triggered)
-
+        if battery.available:
+            battery.connect("changed", self._on_battery_changed)
+            self._last_charging = battery.charging
         # power_profiles.connect("changed", lambda *_: self._on_power_profile_changed())
         self._check_for_updates()
 
@@ -371,6 +379,7 @@ class OSD(WaylandWindow):
 
     def _on_alarm_triggered(self, *_):
         self._show_only(self.alarm_icon)
+        play_sound("alarm")
         
     def _handle_brightness_click(self):
         min_brightness = brightness.max_screen * 0.02
@@ -393,7 +402,7 @@ class OSD(WaylandWindow):
         if bar.is_applet_open("Settings"):
             return
         if self._monitor_connector == wm.active_output:
-            for child in [self.volume_bar, self.brightness_bar, self.layout_icon, self.alarm_icon, self.update_widget]:
+            for child in [self.volume_bar, self.brightness_bar, self.layout_icon, self.alarm_icon, self.update_widget, self.battery_icon, self.battery_low_icon, self.battery_critical_icon]:
                 child.set_visible(child is widget)
 
             if not self.is_visible():
@@ -417,6 +426,36 @@ class OSD(WaylandWindow):
     def _on_update_available(self, commits_behind: int):
         self.update_widget.set_update_available(commits_behind)
         self._show_only(self.update_widget)
+
+    def _on_battery_changed(self, _):
+        percent = battery.percent
+        charging = battery.charging
+
+        if charging and not self._last_charging:
+            new_state = "charging"
+        elif not charging and percent <= 5:
+            new_state = "critical"
+        elif not charging and percent <= 20:
+            new_state = "low"
+        else:
+            new_state = "normal"
+
+        if new_state != self._battery_state:
+            self._battery_state = new_state
+            if new_state == "charging":
+                self.battery_icon.set_label("Charging")
+                self._show_only(self.battery_icon)
+                play_sound("battery-charge")
+            elif new_state == "critical":
+                self.battery_critical_icon.set_label(f"{percent}% — Critically Low!")
+                self._show_only(self.battery_critical_icon)
+                play_sound("battery-warning")
+            elif new_state == "low":
+                self.battery_low_icon.set_label(f"{percent}% — Low Battery")
+                self._show_only(self.battery_low_icon)
+                play_sound("battery-low")
+
+        self._last_charging = charging
 
     def _apply_blur(self):
         if self._blur_ctx:

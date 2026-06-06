@@ -16,6 +16,7 @@ from snippets import enable_blur, disable_blur, free_blur
 from snippets.blur.region_trace import Rect
 from snippets.blur.blur import set_blur_regions
 from user_options import user_options
+from utils.sounds import play_sound
 import cairo
 NOTIFICATION_IMAGE_SIZE = 62
 
@@ -29,6 +30,7 @@ class NotificationContainer(Box):
             style_classes=["notification-container"],
         )
         notifications.connect("notification-added", lambda _, nid: self._on_notified(nid))
+
     def remove_notification(self, notification_widget):
         revealer = notification_widget.get_parent()
         if revealer:
@@ -258,6 +260,7 @@ class NotificationWindow(Window):
         )
 
     def notify_added(self):
+        GLib.idle_add(lambda: play_sound("notification"))
         GLib.timeout_add(50, self._refresh_blur)
 
     def notify_removed(self):
