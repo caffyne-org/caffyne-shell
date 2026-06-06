@@ -151,7 +151,7 @@
 }
 
 .option-selection-button.active * {
-    color: var(--background);
+    color: var(--on_primary);
 }
 
 .matugen-thumb {
