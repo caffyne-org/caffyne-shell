@@ -130,7 +130,7 @@
 }
 
 .option-selection-container {
-    background-color: var(--background);
+    background-color: var(--surface);
     padding: 6px 6px;
     min-height: 24px;
     border-radius: apply(radius-m);
