@@ -46,6 +46,8 @@ class TimezoneSearchPage(AppletPage):
             style_classes=["scrollable"],
             max_content_size=(324, 228),
             style="min-width: 324px; min-height: 228px;",
+            kinetic_scroll=True,
+            overlay_scroll=True
         )
         
         super().__init__(
@@ -178,6 +180,7 @@ class WorldClocksWidget(Box):
             style_classes=["laps-scroll"],
             child=self._laps_box,
             max_content_size=(324, 162),
+            overlay_scroll=True
         )
 
         self._laps_placeholder = Box(

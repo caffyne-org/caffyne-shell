@@ -1,5 +1,3 @@
-# wifi_menu.py
-
 from fabric.widgets.box import Box
 from fabric.widgets.label import Label
 from fabric.widgets.button import Button

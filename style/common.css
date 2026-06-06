@@ -220,3 +220,47 @@ menuitem:focus {
     min-width: 6px;
     border-width: 6px;
 }
+
+scrollbar slider {
+    background: var(--outline);
+    border-radius: apply(radius-xl);
+    min-width: 6px;
+    min-height: 48px;
+    margin: 16 0px;
+    /* Delay beim Shrink (hover-leave) */
+    transition: min-width 300ms ease 2s,
+                min-height 300ms ease 2s,
+                background 300ms ease 2s;
+}
+
+scrollbar slider:hover {
+    background: var(--on_background);
+    min-width: 12px;
+    min-height: 48px;
+    /* Sofort wachsen beim Hover */
+    transition: min-width 300ms ease,
+                min-height 300ms ease,
+                background 300ms ease;
+}
+
+scrollbar slider:active {
+    background: var(--outline);
+    min-width: 12px;
+    min-height: 48px;
+    /* Sofort wachsen beim Hover */
+    transition: min-width 300ms ease,
+                min-height 300ms ease,
+                background 300ms ease;
+}
+
+scrollbar trough {
+    background: transparent;
+}
+
+scrollbar {
+    background: transparent;
+    border: none;
+}
+
+scrollbar.vertical slider { min-height: 48px; }
+scrollbar.horizontal slider { min-width: 48px; }

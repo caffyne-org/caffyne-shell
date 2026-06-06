@@ -284,6 +284,8 @@ class ProcessesMenu(AppletPage):
                             max_content_size=(324, 330),
                             v_expand=True,
                             child=self.process_list,
+                            kinetic_scroll=True,
+                            overlay_scroll=True
                         ),
                         ]
                     )
