@@ -1795,7 +1795,14 @@ class BarManager:
             widget = collection.pop(monitor, None)
             if widget:
                 widget.destroy()
-
+                
+    def _on_monitor_added(self, display: Gdk.Display, monitor: Gdk.Monitor) -> None:
+        for i in range(display.get_n_monitors()):
+            if display.get_monitor(i) == monitor:
+                self._add_bar(monitor, i)
+                break
+        return False
+    
     def _on_monitor_removed(self, display, monitor):
         for key in [k for k in self._bars if k[0] == monitor]:
             self._bars.pop(key).destroy()

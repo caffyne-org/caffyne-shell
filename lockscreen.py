@@ -230,7 +230,9 @@ class LockScreen(Window):
     def _on_key(self, widget, event):
         if not self._awake:
             self._do_wake()
-            GLib.idle_add(self._entry_field.grab_focus)
+        if not self._entry_field.is_focused():
+            self._entry_field.grab_focus()
+            self._entry_field.set_position(-1)
         self._reset_idle_timer()
 
     def _on_motion(self, *_):
@@ -245,9 +247,6 @@ class LockScreen(Window):
         self._layout.set_center_children([self._entry_group])
         self._entry_group.set_opacity(0.0)
         self._entry_group.show_all()
-        if not self._entry_field.is_focus():
-            self._entry_field.grab_focus()
-            self._entry_field.set_position(-1)
         self._wake_anim.play()
 
     def _do_sleep(self):
@@ -319,7 +318,13 @@ class LockManager:
         for i in range(display.get_n_monitors()):
             self._add_monitor(display.get_monitor(i), i)
 
-        display.connect("monitor-added",   lambda _, mon: self._add_monitor(mon))
+        display.connect(
+            "monitor-added",
+            lambda _, mon: GLib.timeout_add(
+                1000,
+                lambda _, mon: self._add_monitor(mon)
+            )
+        )
         display.connect("monitor-removed", lambda _, mon: self._remove_monitor(mon))
 
     # ------------------------------------------------------------------ #

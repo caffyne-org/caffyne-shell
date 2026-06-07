@@ -48,6 +48,7 @@ class Svg(FabricSvg):
         cr.save()
         self._handle.render_document(cr, rect)
         cr.restore()
+        
 class Icon(Svg):
     def __init__(self, icon_name, icon_size=16, *args, **kwargs):
         self._icon_name = icon_name
