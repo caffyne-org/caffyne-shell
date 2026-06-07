@@ -23,6 +23,14 @@
     border-radius: apply(radius-m);
 }
 
+.clock-dnd-icon {
+    transition: color 0.3s ease;
+}
+
+.clock-dnd-icon.active {
+    color: var(--primary)
+}
+
 .world-clock-button {
     background-color: var(--surface_container);
     min-height: 126px;

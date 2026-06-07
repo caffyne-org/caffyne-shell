@@ -380,7 +380,7 @@ class TimerWidget(Box):
             icon_size=16,
         )
 
-        self.left_icon = Icon(icon_name="clock-countdown-duotone", icon_size=16)
+        self.left_icon = Icon(style_classes=["clock-dnd-icon"], icon_name="clock-countdown-duotone", icon_size=16)
 
         super().__init__(
             style_classes=["clock-timer-widget"],
@@ -431,10 +431,13 @@ class TimerWidget(Box):
     def _update_left_icon(self):
         if timer.alarm_set and timer.do_not_disturb:
             self.left_icon.set_icon_name("bell-simple-slash-duotone")
+            self.left_icon.add_style_class("active")
         elif timer.alarm_set:
             self.left_icon.set_icon_name("bell-simple-z-duotone")
+            self.left_icon.remove_style_class("active")
         else:
             self.left_icon.set_icon_name("clock-countdown-duotone")
+            self.left_icon.remove_style_class("active")
 
 class ClockApplet(Applet):
     def __init__(self, parent, **kwargs):
