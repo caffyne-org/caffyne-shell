@@ -416,8 +416,7 @@ class WidgetWrapper(Box):
         self.event_box.add(child)
         self.add(self.event_box)
 
-        if self.widget_key in APPLET_WIDGETS:
-            self.event_box.connect("button-release-event", self._on_click)
+        self.event_box.connect("button-release-event", self._on_click)
         if key not in ["Workspaces", "Dock"]:
             self.event_box.add_style_class("bar-widget")
             

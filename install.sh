@@ -245,12 +245,10 @@ setup_matugen() {
     
     local matugen_config_dir="$HOME/.config/matugen"
     local matugen_conf="$matugen_config_dir/config.toml"
-    local templates_dir="$matugen_config_dir/templates"
-    local target_template="$templates_dir/caffyne-shell-colors.css"
+    local target_template="$matugen_config_dir/caffyne-shell-colors.css"
     local source_template="$INSTALL_DIR/matugen/caffyne-shell-colors.css"
 
     mkdir -p "$matugen_config_dir"
-    mkdir -p "$templates_dir"
 
     if [[ ! -f "$matugen_conf" ]]; then
         info "Creating Matugen config.toml..."
@@ -266,7 +264,6 @@ setup_matugen() {
         info "Matugen config entry already exists — skipping append."
     else
         info "Appending Caffyne template config to matugen/config.toml..."
-        # Using a heredoc to ensure formatting is clean
         cat <<EOF >> "$matugen_conf"
 
 # Caffyne Shell Colors
@@ -274,19 +271,6 @@ setup_matugen() {
 input_path = '~/.config/caffyne-shell/matugen/caffyne-shell-colors.css'
 output_path = '~/.config/caffyne-shell/style/colors.css'
 EOF
-    fi
-
-    if [[ -f "$target_template" ]]; then
-        if cmp -s "$source_template" "$target_template"; then
-            success "Matugen template is already up to date."
-        else
-            info "Template out of date — updating template file..."
-            cp "$source_template" "$target_template"
-        fi
-    else
-        info "Template missing — installing to $templates_dir..."
-        cp "$source_template" "$target_template"
-        success "Matugen template installed."
     fi
 }
 
