@@ -19,15 +19,15 @@ session_id = os.environ.get("XDG_SESSION_ID", "")
 
 
 def _wm_logout():
-    if isinstance(wm, Niri):
-        wm.send_command({"Action": {"Quit": {"skip_confirmation": True}}})
-    elif isinstance(wm, Hyprland):
-        wm.send_command("exit")
-    # elif isinstance(wm, Mango):
-    #     wm.send_command("quit")
-    else:
+    # if isinstance(wm, Niri):
+    #     wm.send_command({"Action": {"Quit": {"skip_confirmation": True}}})
+    # elif isinstance(wm, Hyprland):
+    #     wm.send_command("hl.dsp.exit()")
+    # # elif isinstance(wm, Mango):
+    # #     wm.send_command("quit")
+    # else:
         # Generic fallback
-        subprocess.Popen("loginctl terminate-session $XDG_SESSION_ID", shell=True)
+    subprocess.Popen("loginctl terminate-session $XDG_SESSION_ID", shell=True)
 
 
 class ConfirmPage(AppletPage):

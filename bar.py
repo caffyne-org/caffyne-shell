@@ -427,6 +427,7 @@ class WidgetWrapper(Box):
         if self.widget_key == "Dash":
             self.event_box.connect("enter-notify-event", lambda w, _: w.add_style_class("hovered"))
             self.event_box.connect("leave-notify-event", self.on_leave)
+            self.event_box.connect("button-press-event", lambda w, e: w.add_style_class("active") if e.button == 1 and not edit_mode.edit_mode else None)
         edit_mode.connect("notify::edit-mode", self._on_edit_mode_changed)
         self._apply_drag_state()
 
