@@ -45,4 +45,4 @@ class HyprlandWorkspace(WMWorkspace):
         super().sync(mapped)
 
     def switch_to(self) -> None:
-        self.__service.send_command(f"workspace {self.id}")
+        self.__service.send_command(f"hl.dsp.focus({{workspace={self.id}}})")

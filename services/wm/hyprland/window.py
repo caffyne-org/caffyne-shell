@@ -58,13 +58,17 @@ class HyprlandWindow(WMWindow):
         super().sync(mapped)
 
     def close(self) -> None:
-        self.__service.send_command(f"closewindow address:{hex(self.id)}")
+        self.__service.send_command(f'hl.dsp.closewindow({{window = "address:{hex(self.id)}"}})')
 
     def focus(self) -> None:
-        self.__service.send_command(f"focuswindow address:{hex(self.id)}")
+        self.__service.send_command(f'hl.dsp.focus({{window = "address:{hex(self.id)}"}})')
 
     def toggle_fullscreen(self) -> None:
-        self.__service.send_command("fullscreen 0")
+        self.__service.send_command(
+            f'hl.dsp.window.fullscreen({{action = "toggle", window = "address:{hex(self.id)}"}})'
+        )
 
     def toggle_floating(self) -> None:
-        self.__service.send_command("togglefloating")
+        self.__service.send_command(
+            f'hl.dsp.window.float({{action = "toggle", window = "address:{hex(self.id)}"}})'
+        )
