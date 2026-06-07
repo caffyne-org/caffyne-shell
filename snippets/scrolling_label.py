@@ -61,7 +61,7 @@ class ScrollingLabel(Gtk.DrawingArea, Widget):
 
         self._scroll_animator = (
             Animator(
-                bezier_curve=(0.0, 0.0, 1.0, 1.0),
+                bezier_curve=(0.4, 0.0, 0.2, 1.0),
                 duration=1.0,
                 min_value=0.0,
                 max_value=1.0,
