@@ -133,8 +133,7 @@ class Dock(EventBox):
                 self._workspace_box.add(item)
                 item.show_all()
 
-        # self._box.show_all()
-        # Re-apply pinned box visibility after show_all, which would have overridden it
+        self._workspace_box.set_visible(len(self._workspace_box.children) > 0)
         self._pinned_container.set_visible(len(pinned_items) > 0)
         self._update_pill()
 
