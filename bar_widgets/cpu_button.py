@@ -15,7 +15,7 @@ class CPUIndicatorButton(ProgressButton):
         invoke_repeater(1_000, self._update)
  
     def _update(self):
-        cpu = psutil.cpu_percent(interval=0.2)
+        cpu = psutil.cpu_percent()
         self._update_label(f"{round(cpu)}%")
         self._update_value(round(cpu))
         return True
