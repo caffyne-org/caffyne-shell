@@ -66,7 +66,7 @@ class ConfirmPage(AppletPage):
     def _execute(self):
         if self._play_sound:
             play_sound("session-quit")
-            GLib.timeout_add(1000, lambda: [self._callback(), False])
+            GLib.timeout_add(500, lambda: [self._callback(), False])
         else:
             self._callback()
             
@@ -132,7 +132,7 @@ class LogoutMenu(QSAppletPage):
                     ]),
                     Box(spacing=6, h_expand=True, children=[
                         PowerButton(
-                            icon_name="arrow-clockwise-duotone",
+                            icon_name="arrow-counter-clockwise-duotone",
                             label="Reboot",
                             on_clicked=lambda *_: confirm(
                                 "arrow-clockwise-duotone", "Reboot",

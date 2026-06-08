@@ -33,7 +33,7 @@ class CalculatorApplet(Applet):
 
         buttons = [
             [
-                ("C",  "C",  "arrows-clockwise-duotone", "operator"),
+                ("C",  "C",  "arrows-counter-clockwise-duotone", "operator"),
                 ("()", "()", "brackets-round",           "operator"),
                 ("%",  "%",  "percent-duotone",          "operator"),
                 ("÷",  "÷",  "divide",                   "operator"),

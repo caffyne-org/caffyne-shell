@@ -47,7 +47,7 @@ class Dock(EventBox):
 
         self._box = Box(
             orientation="h",
-            spacing=8,
+            spacing=12,
             style_classes=["dock-inner"],
             children=[self._pinned_container, self._workspace_box],
         )

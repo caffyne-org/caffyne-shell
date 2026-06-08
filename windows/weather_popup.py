@@ -243,7 +243,7 @@ class WeatherPopup(Box):
             self._daily_box.remove(child)
         daily = weather.daily_forecast or []
         for day in daily[:3]:
-            self._daily_box.add(DailyForecastItem(day, daily[:5]))
+            self._daily_box.add(DailyForecastItem(day, daily[:3]))
 
 class WeatherApplet(Applet):
     def __init__(self, parent, *kwargs):

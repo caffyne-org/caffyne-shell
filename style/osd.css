@@ -5,7 +5,7 @@
         inset 0 0 0 1px var(--outline_variant),
         0 2 4 0px rgba(0, 0, 0, 0.4);
     min-width: 324px;
-    padding: 18px;
+    padding: 18px 18px 17px 18px;
     min-height: 80px;
     margin: 8px;
 }

@@ -34,11 +34,11 @@ class TrayItem(EventBox):
     
     def _build_icon(self) -> Image:
         if self._item.icon_name:
-            return Image(icon_name=self._item.icon_name, icon_size=16)
-        pixbuf = self._item.get_preferred_icon_pixbuf(16)
+            return Image(icon_name=self._item.icon_name, icon_size=20)
+        pixbuf = self._item.get_preferred_icon_pixbuf(20)
         if pixbuf is not None:
             return Image(pixbuf=pixbuf)
-        return Image(icon_name="image-missing", icon_size=16)
+        return Image(icon_name="image-missing", icon_size=20)
     
     def _on_item_changed(self, *_):
         # rebuild icon and tooltip on change
@@ -85,12 +85,12 @@ class SystemTray(Box):
         )
 
         self.tray = Box(
-            style_classes=["bar-button"],
+            style_classes=["bar-button", "system-tray"],
             spacing=8,
         )
 
         super().__init__(
-            spacing=4,
+            spacing=0,
             children=[self.edit_overlay, self.tray],
             **kwargs,
         )

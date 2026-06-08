@@ -192,7 +192,7 @@ class OSDBar(Box):
 
         super().__init__(
             orientation="v",
-            spacing=4,
+            spacing=9,
             style_classes=["osd-row"],
             h_expand=True,
             h_align="fill",
@@ -232,7 +232,7 @@ class OSD(WaylandWindow):
         )
         self.volume_bar = Box(
             orientation="v",
-            spacing=4,
+            spacing=8,
             style_classes=["osd-row"],
             h_expand=True,
             h_align="fill",

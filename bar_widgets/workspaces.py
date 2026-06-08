@@ -31,7 +31,7 @@ class WorkspaceButton(EventBox):
                 icon = Image(
                     css_classes=["icon"],
                     icon_name=self._get_icon(w),
-                    icon_size=16,
+                    icon_size=20,
                 )
                 self.icon_map[w.id] = icon
                 self._icon_box.add(icon)
@@ -40,7 +40,7 @@ class WorkspaceButton(EventBox):
             child=Box(
                 style_classes=["workspace"] + (["active"] if workspace.is_active else []),
                 orientation="v",
-                spacing=4,
+                spacing=8,
                 children=[self._icon_box],
             ),
         )
@@ -73,7 +73,7 @@ class WorkspaceButton(EventBox):
         icon = Image(
             css_classes=["icon"],
             icon_name=self._get_icon(window),
-            icon_size=18 if self.variant == "icons" else 16,
+            icon_size=20,
         )
         self.icon_map[window.id] = icon
 
@@ -137,7 +137,7 @@ class WorkspaceNumberButton(EventBox):
             ctx.remove_class("active")
 
 class WorkspacePill(Gtk.DrawingArea):
-    def __init__(self, offset: int = 11, width=8, **kwargs):
+    def __init__(self, offset: int = 13, width=8, **kwargs):
         super().__init__(**kwargs)
         self.get_style_context().add_class("workspace-pill")
         self.set_has_window(False)
@@ -300,7 +300,7 @@ class Workspaces(EventBox):
                 else ["workspace-numbers-container"] if self._variant == "numbers"
                 else ["workspace-button-container"]
             ),
-            v_expand=False, v_align="center", spacing=1 if self._variant == "numbers" else 4
+            v_expand=False, v_align="center", spacing=1 if self._variant == "numbers" else 4 if self._variant == "dots" else 6
         )
 
         if self._variant == "icons+pill":

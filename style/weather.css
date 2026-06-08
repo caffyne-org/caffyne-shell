@@ -40,7 +40,7 @@
 .daily-max-temp {
     font-size: 11px;
     color: var(--on_surface_variant);
-    min-width: 16px;
+    min-width: 24px;
 }
 
 .daily-min-temp {

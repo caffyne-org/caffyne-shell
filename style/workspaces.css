@@ -2,7 +2,7 @@
     background-color: var(--surface_container);
     border-radius: apply(radius-m);
     /* margin: 0px 2px; */
-    padding: 9px 9px;
+    padding: 7px 7px;
     border: 1px solid;
     border-color: var(--surface_container_highest);
     transition: all 0.3s ease;
@@ -44,7 +44,8 @@
 }
 
 .workspace-numbers-container .workspace {
-    padding: 9px 10px;
+    padding: 0px 10px;
+    min-height: 36px;
     border-radius: 0px;
     border: unset;
     min-width: 10px;
