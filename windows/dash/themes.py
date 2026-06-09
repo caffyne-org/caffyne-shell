@@ -230,7 +230,7 @@ class ThemePreview(Box):
         )
 
         self._radius_buttons: dict[str, Button] = {}
-        radius_row = Box(style_classes=["option-selection-container"], orientation="h", spacing=10, h_align="center")
+        radius_row = Box(style_classes=["option-selection-container"], orientation="h", spacing=6, h_align="center")
         for label, key in [("Sharp", "sharp"), ("Medium", "medium"), ("Round", "round")]:
             btn = Button(
                 label=label,
@@ -251,7 +251,7 @@ class ThemePreview(Box):
         )
 
         self._font_buttons: dict[str, Button] = {}
-        font_row = Box(style_classes=["option-selection-container"], orientation="h", spacing=10, h_align="center")
+        font_row = Box(style_classes=["option-selection-container"], orientation="h", spacing=6, h_align="center")
         for label, key in [("None", "none"), ("Mixed", "mixed"), ("All", "all")]:
             btn = Button(
                 label=label,

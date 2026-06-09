@@ -106,6 +106,10 @@
     padding: 0px 2px 0px 2px;
 }
 
+.bar-button.system-tray {
+    padding: 0 8px;
+}
+
 /* .widget-group-inner .left .bar-button.variant-scale-label {
     padding-right: 0px;
 }
