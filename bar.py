@@ -4,6 +4,7 @@ from fabric.widgets.wayland import WaylandWindow as Window
 from fabric.widgets.box import Box
 from fabric.widgets.centerbox import CenterBox
 from fabric.widgets.eventbox import EventBox
+from fabric.widgets.shapes.corner import Corner
 from snippets import HackedRevealer, enable_blur, set_blur_regions_from_widget, disable_blur, free_blur, AppletReveal
 from snippets.applet_reveal import _ease_out_expo
 from snippets.blur.blur import set_blur_regions
@@ -189,10 +190,12 @@ class DismissLayer(Window):
         self.event_box.connect("button-release-event", lambda *_: on_dismiss())
 
 class AppletWindow(PopupWindow):
-    def __init__(self, applet, alignment: str = "top", standalone = False, **kwargs):
+    def __init__(self, applet, alignment: str = "top", standalone=False, **kwargs):
         self._keys = None
         self._blur_ctx = None
         self._alignment = alignment
+        self._window_box = None
+        self._content_box = None
         applets = applet if isinstance(applet, list) else [applet]
 
         def build_content(window, alignment):
@@ -200,26 +203,123 @@ class AppletWindow(PopupWindow):
             self._content_box = Box(
                 orientation="v",
                 spacing=18,
-                children=children
+                children=children,
             )
             self._content_box.add_style_class("applet")
             return self._content_box
 
+        content = build_content(self, alignment)
+
+        # Empty box for now — populated after super().__init__ sets _parent
+        self._window_box = Box(orientation="h")
+        self._window_box.add(content)
+
         animation_direction = "up" if alignment == "bottom" else "down"
 
         self.revealer = AppletReveal(
-
             direction=animation_direction,
-            child=Box(children=[build_content(self, alignment)])
+            child=Box(children=[self._window_box])
         )
 
         self.main = Box(style="min-height: 1px;", children=[self.revealer])
         self.dismiss_layer = DismissLayer(on_dismiss=self.toggle)
 
         super().__init__(title="caffyne-shell-applet", child=self.main, **kwargs)
+
+        # Now _parent exists, safe to populate corners
+        self._populate_corner_layout(content, alignment, False, False)
+
         self.add_keybinding("escape", lambda: self.toggle())
         if not standalone:
             GtkLayerShell.set_exclusive_zone(self, -1)
+
+    def _bar_config(self) -> dict:
+        if self._parent is None:
+            return {}
+        return getattr(self._parent, "bar_config", {})
+
+    def _build_window_box(self, content: Gtk.Widget, alignment: str) -> Box:
+        """Create the outer wrapper box; rebuilt when edge state changes."""
+        self._window_box = Box(orientation="h")
+        self._populate_corner_layout(content, alignment, at_left_edge=False, at_right_edge=False)
+        return self._window_box
+
+    def _populate_corner_layout(
+        self,
+        content: Gtk.Widget,
+        alignment: str,
+        at_left_edge: bool,
+        at_right_edge: bool,
+    ):
+        cfg = self._bar_config()
+        connected    = not cfg.get("floating_applets", True)
+        floating_bar = cfg.get("floating_bar", False)
+        print(connected)
+        for child in list(self._window_box.get_children()):
+            self._window_box.remove(child)
+        print(f"[corners] connected={connected} alignment={alignment} left_edge={at_left_edge} right_edge={at_right_edge}")
+
+        if not connected:
+            self._window_box.add(content)
+            return
+
+        def make_corner(orientation: str) -> Corner:
+            corner =  Corner(
+                orientation=orientation,
+                style="background-color: red;",
+                size=24,
+                h_expand=False,
+                v_expand=False,
+            )
+            corner.show_all()
+            return corner
+
+        if alignment == "top":
+            if at_left_edge and at_right_edge:
+                self._window_box.add(content)
+            elif at_left_edge:
+                self._window_box.add(content)
+                self._window_box.add(make_corner("top-left"))
+            elif at_right_edge:
+                self._window_box.add(make_corner("top-right"))
+                self._window_box.add(content)
+            else:
+                self._window_box.add(make_corner("top-right"))
+                self._window_box.add(content)
+                self._window_box.add(make_corner("top-left"))
+
+        elif alignment == "bottom":
+            if at_left_edge and at_right_edge:
+                self._window_box.add(content)
+            elif at_left_edge:
+                self._window_box.add(content)
+                self._window_box.add(make_corner("bottom-left"))
+            elif at_right_edge:
+                self._window_box.add(make_corner("bottom-right"))
+                self._window_box.add(content)
+            else:
+                self._window_box.add(make_corner("bottom-right"))
+                self._window_box.add(content)
+                self._window_box.add(make_corner("bottom-left"))
+
+    def on_edge_state_changed(self, at_left_edge: bool, at_right_edge: bool):
+        if self._window_box is None or self._content_box is None:
+            return
+        self._populate_corner_layout(
+            self._content_box,
+            self._alignment,
+            at_left_edge,
+            at_right_edge,
+        )
+        if self._parent is not None:
+            cb = getattr(self._parent, "_centerbox", None)
+            if cb is not None:
+                cb.remove_style_class("applet-at-left-edge")
+                cb.remove_style_class("applet-at-right-edge")
+                if at_left_edge:
+                    cb.add_style_class("applet-at-left-edge")
+                if at_right_edge:
+                    cb.add_style_class("applet-at-right-edge")
 
     def toggle(self):
         if self.is_visible():
@@ -1324,6 +1424,7 @@ class Bar(Window):
         self.alignment = self.bar_config.get("alignment", "top")
         self.min_width = self.bar_config.get("min_width", False)
         self.auto_hide = self.bar_config.get("auto_hide", False)
+        self.floating_applets = self.bar_config.get("floating_applets", False)
 
         self._centerbox = CenterBox(
             style_classes=["bar", "top"] if self.alignment == "top" else ["bar", "bottom"],

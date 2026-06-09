@@ -1,19 +1,20 @@
 from fabric.widgets.wayland import WaylandWindow
+from fabric.widgets.box import Box
+from fabric.widgets.shapes.corner import Corner
 from gi.repository import Gtk, GtkLayerShell, Gdk, GLib
 
 EDGE_MARGIN = 0
+CORNER_SIZE = 16  # adjust to match your CSS corner size
 
 def _get_monitor_geometry(widget: Gtk.Widget) -> tuple[int, int]:
     screen = Gdk.Screen.get_default()
     window = widget.get_toplevel().get_window()
-
     if window is None:
         return 0, screen.get_width()
-
     monitor_index = screen.get_monitor_at_window(window)
     geo = screen.get_monitor_geometry(monitor_index)
-
     return geo.x, geo.width
+
 
 class PopupWindow(WaylandWindow):
     def __init__(
@@ -32,7 +33,13 @@ class PopupWindow(WaylandWindow):
         self.margin = self._base_margin.values()
         self._initial_position = True
 
+        self._at_left_edge = False
+        self._at_right_edge = False
+
         self.connect("notify::visible", self.do_update_handlers)
+
+    def on_edge_state_changed(self, at_left_edge: bool, at_right_edge: bool):
+        pass
 
     def get_coords_for_widget(self, widget: Gtk.Widget) -> tuple[int, int]:
         if not ((toplevel := widget.get_toplevel()) and toplevel.is_toplevel()):
@@ -53,7 +60,6 @@ class PopupWindow(WaylandWindow):
     def do_update_handlers(self, *_):
         if not self._pointing_widget:
             return
-
         if not self.get_visible():
             try:
                 self._pointing_widget.disconnect_by_func(self.do_handle_size_allocate)
@@ -61,16 +67,15 @@ class PopupWindow(WaylandWindow):
             except Exception:
                 pass
             return
-
         self._pointing_widget.connect("size-allocate", self.do_handle_size_allocate)
         self.connect("size-allocate", self.do_handle_size_allocate)
-
         GLib.timeout_add(10, self._do_delayed_reposition)
 
     def _do_delayed_reposition(self):
         self._initial_position = True
         self.do_reposition(self.do_calculate_edges())
         return False
+
     def do_handle_size_allocate(self, *_):
         if self.get_visible() and not self._initial_position:
             return
@@ -111,6 +116,14 @@ class PopupWindow(WaylandWindow):
 
         return move_axe
 
+    def _is_connected_applets(self) -> bool:
+        if self._parent is None:
+            return False
+        bar_config = getattr(self._parent, "bar_config", None)
+        if bar_config is None:
+            return False
+        return not bar_config.get("floating_applets", True)
+
     def do_reposition(self, move_axe: str):
         parent_margin = self._parent.margin
         parent_x_margin, parent_y_margin = parent_margin[0], parent_margin[3]
@@ -139,16 +152,35 @@ class PopupWindow(WaylandWindow):
                 raw_margin = round((bar_left + coords_centered[0]) - (width / 2))
             else:
                 raw_margin = round((parent_x_margin + coords_centered[0]) - (width / 2))
-            min_margin = EDGE_MARGIN
-            max_margin = monitor_width - width - EDGE_MARGIN
-            clamped = max(min_margin, min(raw_margin, max_margin))
+
+            connected = self._is_connected_applets()
+
+            raw_left_edge  = raw_margin < CORNER_SIZE
+            raw_right_edge = (monitor_width - raw_margin - width) < CORNER_SIZE
+
+            if connected:
+                if raw_left_edge:
+                    clamped = 0
+                elif raw_right_edge:
+                    clamped = monitor_width - width
+                else:
+                    clamped = max(EDGE_MARGIN, min(raw_margin, monitor_width - width - EDGE_MARGIN))
+            else:
+                clamped = max(EDGE_MARGIN, min(raw_margin, monitor_width - width - EDGE_MARGIN))
+                raw_left_edge  = False
+                raw_right_edge = False
+
             position_margins = (0, 0, 0, clamped)
+
+            if raw_left_edge != self._at_left_edge or raw_right_edge != self._at_right_edge:
+                self._at_left_edge  = raw_left_edge
+                self._at_right_edge = raw_right_edge
+                self.on_edge_state_changed(raw_left_edge, raw_right_edge)
+
         else:
             raw_margin = round((parent_y_margin + coords_centered[1]) - (height / 2))
             monitor_height = Gdk.Screen.get_default().get_height()
-            min_margin = EDGE_MARGIN
-            max_margin = monitor_height - height - EDGE_MARGIN
-            clamped = max(min_margin, min(raw_margin, max_margin))
+            clamped = max(EDGE_MARGIN, min(raw_margin, monitor_height - height - EDGE_MARGIN))
             position_margins = (clamped, 0, 0, 0)
 
         new_margin = tuple(a + b for a, b in zip(position_margins, self._base_margin.values()))
