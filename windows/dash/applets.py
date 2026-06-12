@@ -138,24 +138,22 @@ class DashAppletItem(Button):
             )
 
 class DashAppletPage(DashPage):
-    def __init__(self, window, bar_manager, monitor_obj):
+    def __init__(self, window, bar_manager):
         self.window = window
         self._bar_manager = bar_manager
-        self._monitor_obj = monitor_obj
-        
+        self._monitor_obj = None
+
         self._all_items = ALL_BEAN_DATA
         self._search_entry: Entry | None = None
 
-        active = self._get_all_active_keys()
         self._item_map: dict[str, DashAppletItem] = {
-            key: DashAppletItem(icon, key, in_bar=(key in active))
+            key: DashAppletItem(icon, key, in_bar=False)
             for icon, key in self._all_items
         }
-        for b in self._get_monitor_bars():
-            b.register_dash_callback(self.refresh_bar_state)
+
         super().__init__(grid_children=[list(self._item_map.values())])
 
-        self.connect(   
+        self.connect(
             "realize",
             lambda *_: self.window.connect("notify::visible", self._on_visibility_changed)
         )
@@ -169,11 +167,18 @@ class DashAppletPage(DashPage):
         self.grid.connect("drag-motion", self._on_grid_drag_motion)
 
     def _get_all_active_keys(self) -> set[str]:
-        return set().union(*(
-            bar.get_active_keys()
-            for (mon, _), bar in self._bar_manager._bars.items()
+        bars = self._get_monitor_bars()
+        if not bars:
+            return set()
+        return set().union(*(b.get_active_keys() for b in bars))
+
+    def _get_monitor_bars(self):
+        if self._monitor_obj is None:
+            return []
+        return [
+            b for (mon, _), b in self._bar_manager._bars.items()
             if mon == self._monitor_obj
-        ))
+        ]
     def _attach_search_entry(self, entry: Entry):
         if self._search_entry is entry:
             return
@@ -314,6 +319,12 @@ class DashAppletPage(DashPage):
             return
 
         Gtk.drag_finish(ctx, False, False, time)
+
+    def set_monitor(self, monitor_obj):
+            if monitor_obj is None or monitor_obj is self._monitor_obj:
+                return
+            self._monitor_obj = monitor_obj
+            self.refresh_bar_state()
 
     def refresh_bar_state(self) -> None:
         active = self._get_all_active_keys()

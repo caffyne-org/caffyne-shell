@@ -29,21 +29,37 @@ _PAGE_LABELS = {
 
 _PAGES_WITH_SEARCH = {"apps", "applets"}
 
-class Dash(Window):
-    def __init__(self, monitor, bar_manager):
-        self._opening = False
-        self.monitor_obj = display.get_monitor(monitor)
-        self._bar_manager = bar_manager
-        self.header = DashHeader()
+class DashDismissLayer(Window):
+    def __init__(self, on_dismiss, **kwargs):
+        self.event_box = EventBox()
+        self._blur_ctx = None
+        super().__init__(
+            anchor="left right top bottom",
+            layer="top",
+            title="caffyne-shell-dash",
+            keyboard_mode="none",
+            style_classes=["dash"],
+            visible=False,
+            child=self.event_box,
+        )
 
+        self.event_box.connect("button-release-event", lambda *_: on_dismiss())
+
+class Dash(Window):
+    def __init__(self, bar_manager):
+        self._opening = False
+        self._bar_manager = bar_manager
+        self._active_monitor = None
+        self.header = DashHeader()
         self.h_group_1 = DashGroup(transition_type="slide-left-right")
         self.h_group_2 = DashGroup(transition_type="slide-left-right")
         self.v_stack   = DashGroup(transition_type="slide-up-down")
 
         self.launcher   = DashLauncherPage(self)
-        self.applets = DashAppletPage(self, bar_manager=bar_manager, monitor_obj=self.monitor_obj)
+        self.applets = DashAppletPage(self, bar_manager=bar_manager)
         self.themes     = DashThemePage(bar_manager=bar_manager)
         self.wallpapers = DashWallpaperPage()
+        self.dismiss_layer = DashDismissLayer(on_dismiss=lambda: self.toggle(self._active_monitor))
 
         self.h_group_1.add_named(self.launcher,   "apps")
         self.h_group_1.add_named(self.applets,    "applets")
@@ -70,25 +86,20 @@ class Dash(Window):
         )
 
         self.revealer = DashReveal(
-
             child=self._main_box,
             h_expand=True,
             v_expand=True,
         )
-        self._blur_ctx = None
 
         super().__init__(
-            monitor=monitor,
-            style_classes=["dash"],
+            # monitor=monitor,
+            # style_classes=["dash"],
             layer="top",
-            title="caffyne-shell-dash",
             keyboard_mode="on-demand",
-            anchor="top right bottom left",
+            # anchor="top right bottom left",
             child=self.revealer,
             visible=False,
         )
-        self.connect("button-press-event", self._on_bg_click)
-        self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.add_keybinding("escape", lambda: self.toggle())
         self.connect("key-press-event", self._on_key_press)
         self.h_group_1.connect("notify::visible-child", self._on_stack_changed)
@@ -156,30 +167,31 @@ class Dash(Window):
         self._on_stack_changed()
         self.h_group_1.set_visible_child(self.launcher)
         self.h_group_2.set_visible_child(self.wallpapers)
-
-    def _apply_blur(self):
-        if not self._blur_ctx:
-            self._blur_ctx = enable_blur(self)
         
-    def toggle(self):
+    def toggle(self, active_monitor=None):
         if self.is_visible():
-            self.remove_style_class("dash")
             self.revealer.close(on_done=self._hide)
-            if self._blur_ctx:
-                disable_blur(self._blur_ctx)
-                free_blur(self._blur_ctx)
-                self._blur_ctx = None
-            self._bar_manager.set_bars_top(self.monitor_obj)
+            if self.dismiss_layer._blur_ctx:
+                disable_blur(self.dismiss_layer._blur_ctx)
+                free_blur(self.dismiss_layer._blur_ctx)
+                self.dismiss_layer._blur_ctx = None
+            if self._active_monitor is not None:
+                self._bar_manager.set_bars_top(self._active_monitor)
+            self.dismiss_layer.hide()
         else:
             self._opening = True
             if bar.is_applet_open:
                 bar.set_open_applet(None)
+            self._active_monitor = active_monitor
+            self.applets.set_monitor(active_monitor)
+            self.dismiss_layer.show()
+            if not self.dismiss_layer._blur_ctx:
+                self.dismiss_layer._blur_ctx = enable_blur(self.dismiss_layer)
             self.show()
-            self.add_style_class("dash")
-            self._apply_blur()
             self.revealer.open()
 
-            self._bar_manager.set_bars_overlay(self.monitor_obj)
+            if active_monitor is not None:
+                self._bar_manager.set_bars_overlay(active_monitor)
 
             GLib.timeout_add(300, self._clear_opening)
 
@@ -187,48 +199,27 @@ class Dash(Window):
         self._opening = False
         return False
 
-    def toggle_applets(self):
+    def toggle_applets(self, active_monitor=None):
         self.h_group_1.set_visible_child(self.applets)
         self.v_stack.set_visible_child(self.h_group_1)
         if not self.is_visible():
-            self.toggle()
+            self.toggle(active_monitor)
         edit_mode.enable()
 
-    def toggle_wallpapers(self):
+    def toggle_wallpapers(self, active_monitor=None):
         self.h_group_2.set_visible_child(self.wallpapers)
         self.v_stack.set_visible_child(self.h_group_2)
         if not self.is_visible():
-            self.toggle()
+            self.toggle(active_monitor)
 
-    def toggle_themes(self):
+    def toggle_themes(self, active_monitor=None):
         self.v_stack.set_visible_child(self.h_group_2)
         self.h_group_2.set_visible_child(self.themes)
         if not self.is_visible():
-            self.toggle()
+            self.toggle(active_monitor)
 
     def _hide(self):
         self.hide()
         self.v_stack.set_visible_child(self.h_group_1)
         self.h_group_1.set_visible_child(self.launcher)
         edit_mode.disable()
-    def _on_workspace_changed(self, *_):
-        if self.is_visible():
-            self.toggle()
-    def _on_window_changed(self, *_):
-        if self._opening:
-            return
-        if self.is_visible():
-            self.toggle()
-
-    def _on_bg_click(self, widget, event):
-        if event.button != 1:
-            return False
-        if self.revealer.progress < 1.0:
-            return False
-        
-        alloc = self._main_box.get_allocation()
-        if (alloc.x <= event.x <= alloc.x + alloc.width and
-            alloc.y <= event.y <= alloc.y + alloc.height):
-            return False
-        self.toggle()
-        return False

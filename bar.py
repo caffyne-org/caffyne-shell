@@ -240,7 +240,6 @@ class AppletWindow(PopupWindow):
             self.set_focus(None)
     def _finish_close(self):
         GLib.timeout_add(50, self.hide)
-
         if self._blur_ctx:
             disable_blur(self._blur_ctx)
             free_blur(self._blur_ctx)
@@ -1624,11 +1623,10 @@ class Bar(Window):
                 self._hide_timeout = GLib.timeout_add(600, self._try_hide)
 
     def _open_edit_applets(self):
-        if self._bar_manager is None:
+        if self._bar_manager is None or self._bar_manager._dash is None:
             return
-        dash = self._bar_manager._dashes.get(self.gdk_monitor)
-        if dash:
-            dash.toggle_applets()
+        active_monitor = self.gdk_monitor
+        self._bar_manager._dash.toggle_applets(active_monitor)
     def _on_menu_deactivate(self, _):
         if not self.auto_hide:
             return
@@ -1723,7 +1721,7 @@ class BarManager:
     def __init__(self):
         self._bars: dict[tuple[Gdk.Monitor, int], Bar] = {}
         self._notifications: dict[Gdk.Monitor, NotificationWindow] = {}
-        self._dashes: dict[Gdk.Monitor, Dash] = {}
+        self._dash: Dash | None = None
         self._osds: dict[Gdk.Monitor, OSD] = {}
         self._fallback_popups: dict[str, AppletWindow] = {}
         self._display = Gdk.Display.get_default()
@@ -1742,8 +1740,8 @@ class BarManager:
         if monitor not in self._notifications:
             self._notifications[monitor] = NotificationWindow(monitor_id)
 
-        if monitor not in self._dashes:
-            self._dashes[monitor] = Dash(monitor_id, self)
+        if self._dash is None:
+            self._dash = Dash(self)
 
         if monitor not in self._osds:
             self._osds[monitor] = OSD(monitor_id)
@@ -1769,29 +1767,21 @@ class BarManager:
                 on_remove=lambda m=monitor, bi=bar_index: self._remove_bar(m, bi),
             )
             self._bars[key] = new_bar
+            new_bar.register_dash_callback(self._dash.applets.refresh_bar_state)
 
-            dash = self._dashes.get(monitor)
-            if dash:
-                new_bar.register_dash_callback(dash.applets.refresh_bar_state)
-                dash.applets.refresh_bar_state()
+        self._dash.applets.refresh_bar_state()
 
     def _remove_bar(self, monitor: Gdk.Monitor, bar_index: int = None) -> None:
         if bar_index is not None:
             bar = self._bars.pop((monitor, bar_index), None)
             if bar:
                 bar.destroy()
-
-            dash = self._dashes.get(monitor)
-            if dash:
-                dash.applets.refresh_bar_state()
-
         else:
             for key in [k for k in self._bars if k[0] == monitor]:
                 self._bars.pop(key).destroy()
 
-            dash = self._dashes.get(monitor)
-            if dash:
-                dash.applets.refresh_bar_state()
+        if self._dash:
+            self._dash.applets.refresh_bar_state()
 
     def _cleanup_monitor(self, monitor: Gdk.Monitor) -> None:
         for collection in (self._notifications):
@@ -1818,42 +1808,32 @@ class BarManager:
 
     def toggle(self, key: str):
         active_output = wm.active_output
-
         active_monitor = None
 
         for i in range(self._display.get_n_monitors()):
             monitor = self._display.get_monitor(i)
-
             if get_connector_from_monitor_id(i) == active_output:
                 active_monitor = monitor
                 break
 
         if key == "Dash":
-            if active_monitor is not None:
-                dash = self._dashes.get(active_monitor)
-                if dash:
-                    dash.toggle()
+            if self._dash:
+                self._dash.toggle(active_monitor)
             return
 
         if key == "Wallpapers":
-            if active_monitor is not None:
-                dash = self._dashes.get(active_monitor)
-                if dash:
-                    dash.toggle_wallpapers()
+            if self._dash:
+                self._dash.toggle_wallpapers(active_monitor)
             return
-        
+
         if key == "Themes":
-            if active_monitor is not None:
-                dash = self._dashes.get(active_monitor)
-                if dash:
-                    dash.toggle_themes()
+            if self._dash:
+                self._dash.toggle_themes(active_monitor)
             return
 
         if key == "EditApplets":
-            if active_monitor is not None:
-                dash = self._dashes.get(active_monitor)
-                if dash:
-                    dash.toggle_applets()
+            if self._dash:
+                self._dash.toggle_applets(active_monitor)
             return
 
         # Search bars on active monitor for the widget
