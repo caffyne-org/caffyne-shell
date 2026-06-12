@@ -4,8 +4,8 @@ from fabric.widgets.eventbox import EventBox
 from .launcher import DashLauncherPage
 from .applets import DashAppletPage
 from .components import DashGroup, DashHeader
-from gi.repository import Gdk, GLib, GtkLayerShell
-from services.singletons import edit_mode, wm
+from gi.repository import Gtk, Gdk, GLib, GtkLayerShell
+from services.singletons import edit_mode
 from .wallpapers import DashWallpaperPage
 from .themes import DashThemePage
 from snippets import DashReveal, enable_blur, disable_blur, free_blur
@@ -30,9 +30,12 @@ _PAGE_LABELS = {
 _PAGES_WITH_SEARCH = {"apps", "applets"}
 
 class DashDismissLayer(Window):
-    def __init__(self, on_dismiss, **kwargs):
+    def __init__(self, dash, on_dismiss, bar_manager, **kwargs):
         self.event_box = EventBox()
         self._blur_ctx = None
+        self._dash = dash
+        self._on_dismiss = on_dismiss
+        self._bar_manager = bar_manager
         super().__init__(
             anchor="left right top bottom",
             layer="top",
@@ -43,8 +46,52 @@ class DashDismissLayer(Window):
             child=self.event_box,
         )
 
-        self.event_box.connect("button-release-event", lambda *_: on_dismiss())
+        self.event_box.connect("button-release-event", self._on_button_press)
 
+    def _on_button_press(self, widget, event: Gdk.EventButton):
+        if event.button == 1:
+            self._on_dismiss()
+            return True
+
+        if event.button == 3:
+            active_monitor = self._dash._active_monitor
+            if active_monitor is None:
+                return True
+
+            monitor_id = next(
+                (i for i in range(display.get_n_monitors())
+                if display.get_monitor(i) == active_monitor),
+                None,
+            )
+
+            bar_count = sum(
+                1
+                for b in self._bar_manager._bars.values()
+                if b.monitor_id == monitor_id
+            )
+
+            menu = Gtk.Menu()
+
+            if bar_count < 2:
+                add_item = Gtk.MenuItem(label="Add Bar")
+                add_item.connect(
+                    "activate",
+                    lambda _: (
+                        self._bar_manager.add_bar_for_monitor(active_monitor),
+                        self._bar_manager.set_bars_overlay(active_monitor),
+                    )
+                )
+                menu.append(add_item)
+            else:
+                item = Gtk.MenuItem(label="Maximum bars (2) reached on this monitor")
+                item.set_sensitive(False)
+                menu.append(item)
+
+            menu.show_all()
+            menu.popup_at_pointer(event)
+            return True
+
+        return False
 class Dash(Window):
     def __init__(self, bar_manager):
         self._opening = False
@@ -59,7 +106,7 @@ class Dash(Window):
         self.applets = DashAppletPage(self, bar_manager=bar_manager)
         self.themes     = DashThemePage(bar_manager=bar_manager)
         self.wallpapers = DashWallpaperPage()
-        self.dismiss_layer = DashDismissLayer(on_dismiss=lambda: self.toggle(self._active_monitor))
+        self.dismiss_layer = DashDismissLayer(dash=self, on_dismiss=lambda: self.toggle(self._active_monitor), bar_manager=bar_manager)
 
         self.h_group_1.add_named(self.launcher,   "apps")
         self.h_group_1.add_named(self.applets,    "applets")
@@ -130,6 +177,7 @@ class Dash(Window):
             entry.set_position(-1)
 
         return False
+    
     def _current_page_name(self) -> str:
         v_child = self.v_stack.get_visible_child()
         if v_child is self.h_group_1:

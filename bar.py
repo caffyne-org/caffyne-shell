@@ -1877,15 +1877,26 @@ class BarManager:
         for bar in self._bars.values():
             bar.apply_blur(enabled)
 
-    def add_bar_for_monitor(self, monitor_id: int) -> None:
+    def add_bar_for_monitor(self, monitor: Gdk.Monitor) -> None:
+        monitor_id = None
+
+        for i in range(self._display.get_n_monitors()):
+            if self._display.get_monitor(i) == monitor:
+                monitor_id = i
+                break
+
+        if monitor_id is None:
+            return
+
         monitor_cfg = next(
             (c for c in user_options.bars.configs if c.get("monitor") == monitor_id),
             None,
         )
-        
+
         existing_alignment = "top"
         if monitor_cfg and monitor_cfg.get("bars"):
             existing_alignment = monitor_cfg["bars"][0].get("alignment", "top")
+
         new_alignment = "bottom" if existing_alignment == "top" else "top"
 
         new_bar_cfg = {
@@ -1899,19 +1910,18 @@ class BarManager:
             "center": [],
             "right": [],
         }
-        monitor_cfg = next(
-            (c for c in user_options.bars.configs if c.get("monitor") == monitor_id),
-            None,
-        )
+
         if monitor_cfg is not None:
             monitor_cfg["bars"].append(new_bar_cfg)
         else:
-            user_options.bars.configs.append({"monitor": monitor_id, "bars": [new_bar_cfg]})
+            user_options.bars.configs.append({
+                "monitor": monitor_id,
+                "bars": [new_bar_cfg]
+            })
+
         user_options.save()
 
-        monitor = Gdk.Display.get_default().get_monitor(monitor_id)
-        if monitor:
-            self._add_bar(monitor, monitor_id)
+        self._add_bar(monitor, monitor_id)
     def set_bars_overlay(self, monitor):
         for (m, _), bar in self._bars.items():
             if m != monitor:

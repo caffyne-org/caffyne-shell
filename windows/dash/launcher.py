@@ -109,13 +109,9 @@ class DashLauncherPage(DashPage):
             self._all_apps = get_desktop_applications()
             if self._search_entry:
                 self._search_entry.set_text("")
+            self._render_apps(self._sorted_by_usage(self._all_apps))
             adj = self.scroll.get_vadjustment()
             adj.set_value(adj.get_lower())
-            for child in self.grid.get_children():
-                child.destroy()
-        else:
-            self._render_apps(self._sorted_by_usage(self._all_apps))
-
             
     def _sorted_by_usage(self, apps: list) -> list:
         usage = load_usage()
