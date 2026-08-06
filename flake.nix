@@ -2,7 +2,7 @@
   description = "caffyne-shell — a lightweight desktop shell powered by Fabric";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     utils.url = "github:numtide/flake-utils";
     fabric = {
       url = "github:Fabric-Development/fabric";
@@ -52,7 +52,7 @@
           swayidle
           wlsunset
           wf-recorder
-          swww
+          awww
         ];
 
         pythonEnv = pkgs.python3.withPackages (ps: with pkgs.python3Packages; [
@@ -102,7 +102,7 @@
             swayidle
             wlsunset
             wf-recorder
-            swww
+            awww
             gsettings-desktop-schemas
             hicolor-icon-theme
             adwaita-icon-theme

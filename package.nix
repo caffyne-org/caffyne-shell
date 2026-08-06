@@ -26,7 +26,7 @@
 , swayidle
 , wlsunset
 , wf-recorder
-, swww
+, awww
 , gsettings-desktop-schemas
 , hicolor-icon-theme
 , adwaita-icon-theme
@@ -153,7 +153,7 @@ in stdenv.mkDerivation {
     gappsWrapperArgs+=(--set GI_TYPELIB_PATH "${typelibPath}")
     gappsWrapperArgs+=(--set LD_LIBRARY_PATH "${libraryPath}")
     gappsWrapperArgs+=(--set GTK_THEME "Adwaita")
-    gappsWrapperArgs+=(--prefix PATH : "${lib.makeBinPath [ pipewire bluez brightnessctl swayidle wlsunset wf-recorder swww ]}")
+    gappsWrapperArgs+=(--prefix PATH : "${lib.makeBinPath [ pipewire bluez brightnessctl swayidle wlsunset wf-recorder awww ]}")
     
     # Append host runtime schemas so your system-installed application assets resolve natively
     gappsWrapperArgs+=(--suffix XDG_DATA_DIRS : "/run/current-system/sw/share")
