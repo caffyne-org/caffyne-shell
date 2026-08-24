@@ -1,5 +1,5 @@
 CC      := gcc
-CFLAGS  := -fPIC -Wall -Wextra -O2
+CFLAGS  := -fPIC -Wall -Wextra -O2 -Wno-deprecated-declarations -DGLIB_DISABLE_DEPRECATION_WARNINGS
 LIBS    := $(shell pkg-config --cflags --libs gtk+-3.0) -lm
 
 TARGET  := libhacktk.so

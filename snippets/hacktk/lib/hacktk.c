@@ -1,3 +1,5 @@
+#define GLIB_DISABLE_DEPRECATION_WARNINGS 1
+
 #include <gtk/gtk.h>
 #include <math.h>
 

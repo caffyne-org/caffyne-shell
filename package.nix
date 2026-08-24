@@ -46,7 +46,7 @@ let
     buildInputs = [ gtk3 ];
 
     buildPhase = ''
-      gcc -fPIC -Wall -Wextra -O2 -shared \
+      gcc -fPIC -Wall -Wextra -O2 -Wno-deprecated-declarations -DGLIB_DISABLE_DEPRECATION_WARNINGS -shared \
         -o libhacktk.so hacktk.c \
         $(pkg-config --cflags --libs gtk+-3.0) -lm
     '';
