@@ -522,6 +522,7 @@ class ThemePackService(Service):
             key = f"{variant}/{pack_name}"
             meta["display_name"] = meta.get("name") or pack_name
             meta["id"]           = pack_name
+            meta["name"]         = key
             meta["variant"]      = variant
 
             preview_cache_path = os.path.join(CACHE_DIR, f"{variant}_{pack_name}_thumbnail.png")

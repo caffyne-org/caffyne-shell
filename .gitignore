@@ -9,7 +9,8 @@ result
 plugins/*
 wallpapers/*
 templates/*
-
+themes/*
+icon_packs/*
 styles/colors.css
 styles/borders.css
 styles/fonts.css
