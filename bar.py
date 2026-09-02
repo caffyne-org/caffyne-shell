@@ -5,9 +5,7 @@ from fabric.widgets.wayland import WaylandWindow as Window
 from fabric.widgets.box import Box
 from fabric.widgets.centerbox import CenterBox
 from fabric.widgets.eventbox import EventBox
-from snippets import HackedRevealer, enable_blur, set_blur_regions_from_widget, disable_blur, free_blur, AppletReveal
-from snippets.blur.blur import set_blur_regions
-from snippets.blur.region_trace import Rect
+from snippets import HackedRevealer, enable_blur, set_blur_regions_from_widget, disable_blur, free_blur, AppletReveal, BlurBox
 from gi.repository import Gdk, Gtk, GLib, GtkLayerShell
 from bar_widgets import (
     LauncherButton, BluetoothButton, BatteryButton, CalendarButton, ClockButton,
@@ -16,7 +14,7 @@ from bar_widgets import (
     CalculatorButton, SessionButton, KeyboardButton, SystemTray, Dock, BrightnessButton, DashButton
 )
 from user_options import user_options
-from services.singletons import edit_mode, wm, toggleable_windows
+from services.singletons import edit_mode, wm, toggleable_windows, plugins
 from windows import (
     CalculatorApplet, CalendarApplet, ClockApplet, NotificationHistoryApplet,
     WeatherApplet, MediaApplet, QuickSettings, LauncherApplet, ProcessMonitorApplet, WifiApplet, 
@@ -78,10 +76,13 @@ INCOMPATIBLE_GROUPS: set[frozenset] = {
     frozenset({"Settings", "Session"}),
     frozenset({"Processes", "Launcher"}),
 }
-from plugin_loader import load_plugins
 from windows.dash.applets import ALL_BEAN_DATA
+from desktop_applets import DESKTOP_APPLET_WIDGETS, DESKTOP_CANVAS_SIZES, DESKTOP_APPLET_SIZES
+from services.desktop_applets import DesktopAppletService
 
-load_plugins(BAR_WIDGETS, APPLET_WIDGETS, INCOMPATIBLE_GROUPS, ALL_BEAN_DATA)
+plugins.load_all(BAR_WIDGETS, APPLET_WIDGETS, INCOMPATIBLE_GROUPS, ALL_BEAN_DATA, DESKTOP_APPLET_WIDGETS, DESKTOP_CANVAS_SIZES, DESKTOP_APPLET_SIZES)
+
+DesktopAppletService.get_instance()
 
 def can_group(key_a: str, key_b: str) -> bool:
     return frozenset({key_a, key_b}) not in INCOMPATIBLE_GROUPS
@@ -191,7 +192,6 @@ class DismissLayer(Window):
 class AppletWindow(PopupWindow):
     def __init__(self, applet, alignment: str = "top", standalone = False, **kwargs):
         self._keys = None
-        self._blur_ctx = None
         self._alignment = alignment
         applets = applet if isinstance(applet, list) else [applet]
 
@@ -208,13 +208,21 @@ class AppletWindow(PopupWindow):
         animation_direction = "up" if alignment == "bottom" else "down"
 
         self.revealer = AppletReveal(
-            open_duration=0.125,
-            close_duration=0.1,
+            # open_duration=0.15,
+            # close_duration=0.15,
             direction=animation_direction,
             child=Box(children=[build_content(self, alignment)])
         )
 
-        self.main = Box(style="min-height: 1px;", children=[self.revealer])
+        # The blur region is traced from the frames the reveal shader renders,
+        # so it stays correct for whichever animation pack is loaded.
+        self.blur = BlurBox(
+            child=self.revealer,
+            reveal=self.revealer,
+            enabled=user_options.theme.blur,
+        )
+
+        self.main = Box(style="min-height: 1px;", children=[self.blur])
         self.dismiss_layer = DismissLayer(on_dismiss=self.toggle)
 
         super().__init__(title="caffyne-shell-applet", child=self.main, **kwargs)
@@ -234,139 +242,15 @@ class AppletWindow(PopupWindow):
         else:
             set_open_applet(self)
             self.dismiss_layer.set_visible(True)
+            self.blur.enabled = user_options.theme.blur
             self.show()
             self.revealer.open()
-            if user_options.theme.blur:
-                self._start_animated_blur()
             self.set_focus(None)
     def _finish_close(self):
         GLib.timeout_add(50, self.hide)
-        if self._blur_ctx:
-            disable_blur(self._blur_ctx)
-            free_blur(self._blur_ctx)
-            self._blur_ctx = None
-    def _trace_content_box(self, erode=10):
-        alloc = self._content_box.get_allocation()
-        w, h = alloc.width, alloc.height
-
-        if w <= 0 or h <= 0:
-            return [Rect(0, 0, w, h)]
-
-        surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, w, h)
-        cr = cairo.Context(surface)
-
-        cr.set_operator(cairo.OPERATOR_CLEAR)
-        cr.paint()
-        cr.set_operator(cairo.OPERATOR_OVER)
-
-        style_ctx = self._content_box.get_style_context()
-
-        Gtk.render_background(style_ctx, cr, erode, erode, w - erode * 2, h - erode * 2)
-
-        data    = surface.get_data()
-        stride  = surface.get_stride()
-        accuracy = 1
-        alpha_threshold = 20
-
-        raw: list[Rect] = []
-        for y in range(0, h, accuracy):
-            step_h = min(accuracy, h - y)
-            x = 0
-            while x < w:
-                alpha = data[y * stride + x * 4 + 3]
-                if alpha > alpha_threshold:
-                    start_x = x
-                    while x < w and data[y * stride + x * 4 + 3] > alpha_threshold:
-                        x += 1
-                    raw.append(Rect(start_x, y, x - start_x, step_h))
-                else:
-                    x += 1
-
-        merged: list[Rect] = []
-        for rect in raw:
-            found = False
-            for m in reversed(merged):
-                if (m.x == rect.x and
-                    m.width == rect.width and
-                    m.y + m.height == rect.y):
-                    m.height += rect.height
-                    found = True
-                    break
-            if not found:
-                merged.append(Rect(rect.x, rect.y, rect.width, rect.height))
-
-        return merged if merged else [Rect(0, 0, w, h)]
-    def _start_animated_blur(self):
-        if self._blur_ctx:
-            disable_blur(self._blur_ctx)
-            free_blur(self._blur_ctx)
-            self._blur_ctx = None
-
-        self.revealer.progress_cb = None 
-
-        self._blur_ctx = enable_blur(self)
-
-        try:
-            cx, cy = self._content_box.translate_coordinates(self, 0, 0)
-        except Exception:
-            GLib.timeout_add(32, self._start_animated_blur)
-            return
-
-        traced_rects  = self._trace_content_box()
-        content_alloc = self._content_box.get_allocation()
-        content_h     = content_alloc.height
-        content_w     = content_alloc.width
-        alignment     = self._alignment
-
-        def on_progress(value):
-            if not self._blur_ctx:
-                return
-            try:
-                cx, cy = self._content_box.translate_coordinates(self, 0, 0)
-            except Exception:
-                return
-
-            clipped = []
-
-            scale = (
-                self.revealer.SCALE_START
-                + (1.0 - self.revealer.SCALE_START) * value
-            )
-
-            anchor_x = cx + (content_w / 2.0)
-            anchor_y = cy if alignment != "bottom" else cy + content_h
-
-            for r in traced_rects:
-                abs_x = cx + r.x
-                abs_y = cy + r.y - 2
-
-                left   = math.floor(anchor_x + (abs_x - anchor_x) * scale)
-                top    = math.floor(anchor_y + (abs_y - anchor_y) * scale)
-
-                right  = math.ceil(
-                    anchor_x + ((abs_x + r.width) - anchor_x) * scale
-                )
-
-                bottom = math.ceil(
-                    anchor_y + ((abs_y + r.height) - anchor_y) * scale
-                )
-
-                clipped.append((
-                    left,
-                    top,
-                    max(1, right - left),
-                    max(1, bottom - top),
-                ))
-            if clipped:
-                set_blur_regions(self._blur_ctx, clipped)
-        self.revealer.progress_cb = on_progress
-
     def destroy(self):
         self.dismiss_layer.destroy()
         self.revealer.progress_cb = None
-        if self._blur_ctx:
-            disable_blur(self._blur_ctx)
-            free_blur(self._blur_ctx)
         super().destroy()
 def _make_applet_popup(
     keys: str | list[str],
@@ -1415,7 +1299,7 @@ class Bar(Window):
         return section
 
     def _update_blur_region(self) -> bool:
-        set_blur_regions_from_widget(self._blur_ctx, self, accuracy=1, erode=0)
+        set_blur_regions_from_widget(self._blur_ctx, self, step=1)
         return False
 
     def apply_blur(self, enabled: bool) -> None:
@@ -1744,6 +1628,8 @@ class BarManager:
             lambda display, monitor: GLib.timeout_add(1000, self._on_monitor_added, display, monitor),
         )
         self._display.connect("monitor-removed", self._on_monitor_removed)
+        plugins.connect("plugin-disabled", self._on_plugin_disabled)
+        plugins.connect("plugin-enabled", self._on_plugin_enabled)
 
     def _add_bar(self, monitor: Gdk.Monitor, monitor_id: int) -> None:
         if monitor not in self._notifications:
@@ -1832,16 +1718,6 @@ class BarManager:
                 self._dash.toggle(active_monitor)
             return
 
-        if key == "Wallpapers":
-            if self._dash:
-                self._dash.toggle_wallpapers(active_monitor)
-            return
-
-        if key == "Themes":
-            if self._dash:
-                self._dash.toggle_themes(active_monitor)
-            return
-
         if key == "EditApplets":
             if self._dash:
                 self._dash.toggle_applets(active_monitor)
@@ -1883,6 +1759,41 @@ class BarManager:
             self._fallback_popups[key]._keys = [key]
 
         self._fallback_popups[key].toggle()
+
+    def _on_plugin_disabled(self, _, name: str) -> None:
+        print(f"[BarManager] plugin-disabled received: {name}")
+        print(f"[BarManager] bars: {list(self._bars.keys())}")
+        affected_bars = set()
+        for (monitor, bar_index), bar in self._bars.items():
+            for section in bar.sections.values():
+                for child in list(section.get_children()):
+                    print(f"[BarManager] checking child: {type(child).__name__}")
+                    if isinstance(child, WidgetWrapper) and child.widget_key == name:
+                        child.destroy_popup()
+                        section.remove(child)
+                        child.destroy()
+                        affected_bars.add(bar)
+                    elif isinstance(child, GroupWrapper) and name in child.widget_keys:
+                        # Ungroup it, keep the other widget
+                        remaining_key = next(k for k in child.widget_keys if k != name)
+                        remaining_var = child.widget_variants[child.widget_keys.index(remaining_key)]
+                        group_pos = section.get_children().index(child)
+                        child.destroy_popups()
+                        section.remove(child)
+                        remaining_widget = build_widget(remaining_key, bar.monitor_id, bar.vertical, remaining_var)
+                        if remaining_widget:
+                            wrapper = WidgetWrapper(remaining_key, remaining_widget, variant=remaining_var)
+                            section.add(wrapper)
+                            section.reorder_child(wrapper, group_pos)
+                        affected_bars.add(bar)
+
+        for bar in affected_bars:
+            bar.sync_config()
+
+    def _on_plugin_enabled(self, _, name: str) -> None:
+        # Just refresh dash state, user adds widgets manually via drag
+        if self._dash:
+            self._dash.applets.refresh_bar_state()
 
     def apply_blur(self, enabled: bool) -> None:
         for bar in self._bars.values():

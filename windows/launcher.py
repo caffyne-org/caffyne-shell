@@ -195,7 +195,7 @@ class LauncherApplet(Applet):
             style_classes=["applet-header-label"],
         )
 
-        self._view_toggle_icon = Icon(icon_name="list-dashes-duotone" if self._grid_mode else "squares-four-duotone", icon_size=16)
+        self._view_toggle_icon = Icon(icon_name="list-dashes" if self._grid_mode else "squares-four", icon_size=16)
         self._view_toggle = Button(
             child=self._view_toggle_icon,
             style_classes=["applet-misc-button"],
@@ -213,7 +213,7 @@ class LauncherApplet(Applet):
             style_classes=["launcher-search"],
             spacing=8,
             children=[
-                Icon(icon_name="magnifying-glass-duotone", icon_size=16),
+                Icon(icon_name="magnifying-glass", icon_size=16),
                 self._entry,
             ],
         )
@@ -255,7 +255,7 @@ class LauncherApplet(Applet):
             child.destroy()
         for child in self._grid_box.get_children():
             child.destroy()
-        icon = "list-dashes-duotone" if self._grid_mode else "squares-four-duotone"
+        icon = "list-dashes" if self._grid_mode else "squares-four"
         self._view_toggle_icon.set_icon_name(icon)
         self._view_stack.set_visible_child_name("grid" if self._grid_mode else "list")
         current_text = self._entry.get_text()
@@ -294,7 +294,7 @@ class LauncherApplet(Applet):
     def _on_visibility_changed(self, *_):
         if not self.window.get_visible():
             self._grid_mode = user_options.launcher.grid
-            self._view_toggle_icon.set_icon_name("list-duotone" if self._grid_mode else "squares-four-duotone")
+            self._view_toggle_icon.set_icon_name("list" if self._grid_mode else "squares-four")
             self._view_stack.set_visible_child_name("grid" if self._grid_mode else "list")
             self._entry.set_text("")
             self.window.set_focus(None)

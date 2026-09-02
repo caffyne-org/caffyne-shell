@@ -12,12 +12,9 @@ from services.singletons import notifications, wm
 from services.notification_store import notification_store
 from bar_widgets.workspaces import get_connector_from_monitor_id
 from gi.repository import GLib, Gtk, Gdk, GdkPixbuf
-from snippets import enable_blur, disable_blur, free_blur
-from snippets.blur.region_trace import Rect
-from snippets.blur.blur import set_blur_regions
+from snippets import BlurBox
 from user_options import user_options
 from utils.sounds import play_sound
-import cairo
 NOTIFICATION_IMAGE_SIZE = 62
 
 class NotificationContainer(Box):
@@ -99,7 +96,7 @@ class NotificationWidget(EventBox):
             spacing=4,
             # style="padding: 4px 0px;" if not popup else "",
             children=[
-                Image(icon_name=notification.app_icon, icon_size=16) if notification.app_icon else Icon(icon_name="bell-simple-duotone"),
+                Image(icon_name=notification.app_icon, icon_size=16) if notification.app_icon else Icon(icon_name="bell-simple"),
                 Label(style="opacity: 0.6; font-size: 11px;", label=notification.app_name),
                 Box(
                     h_expand=True,
@@ -241,116 +238,38 @@ class NotificationWidget(EventBox):
 
 class NotificationWindow(Window):
     def __init__(self, monitor: int):
-        self._blur_ctx = None
         self._container = None
-        
+
         container = NotificationContainer(window=self, monitor=monitor)
         self._container = container
-        
+
+        # Every notification is its own reveal, so the box tracks all of them
+        # at once and unions what each one's shader is drawing.
+        self.blur = BlurBox(
+            child=Box(
+                style_classes=["notification-window"],
+                children=[container],
+            ),
+            enabled=user_options.theme.blur,
+        )
+
         super().__init__(
             anchor="top right",
             monitor=monitor,
             title="caffyne-shell-notifications",
             layer="overlay",
-            child=Box(
-                style_classes=["notification-window"],
-                children=[container],
-            ),
+            child=self.blur,
             exclusive=False,
         )
 
     def notify_added(self):
         GLib.idle_add(lambda: play_sound("notification"))
-        GLib.timeout_add(50, self._refresh_blur)
+        self.blur.queue_refresh()
 
     def notify_removed(self):
-        GLib.timeout_add(350, self._refresh_blur)
+        self.blur.queue_refresh()
 
-    def _apply_blur(self):
-        if not self._blur_ctx and user_options.theme.blur:
-            self._blur_ctx = enable_blur(self)
-        self._refresh_blur()
     def set_visible(self, visible: bool):
-        if visible:
-            super().set_visible(visible)
-            GLib.timeout_add(50, self._apply_blur)
-        else:
-            if self._blur_ctx:
-                disable_blur(self._blur_ctx)
-                free_blur(self._blur_ctx)
-                self._blur_ctx = None
-                GLib.timeout_add(50, lambda: super().set_visible(visible))
+        self.blur.enabled = visible and user_options.theme.blur
+        super().set_visible(visible)
 
-    def _trace_notifications(self, erode=4):
-        if not self._container:
-            print("no container")
-            return []
-
-        results = []
-        try:
-            for child in self._container.get_children():
-                widget = child.get_children()[0].get_children()[0]
-                if not widget:
-                    continue
-                alloc = widget.get_allocation()
-                w, h = alloc.width, alloc.height
-                if w <= 0 or h <= 0:
-                    continue
-
-                try:
-                    cx, cy = widget.translate_coordinates(self, 0, 0)
-                except Exception:
-                    continue
-
-                surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, w, h)
-                cr = cairo.Context(surface)
-                cr.set_operator(cairo.OPERATOR_CLEAR)
-                cr.paint()
-                cr.set_operator(cairo.OPERATOR_OVER)
-
-                style_ctx = widget.get_style_context()
-                Gtk.render_background(style_ctx, cr, erode, erode, w - erode * 2, h - erode * 2)
-
-                data   = surface.get_data()
-                stride = surface.get_stride()
-
-                raw = []
-                for y in range(0, h, 1):
-                    x = 0
-                    while x < w:
-                        if data[y * stride + x * 4 + 3] > 20:
-                            start_x = x
-                            while x < w and data[y * stride + x * 4 + 3] > 20:
-                                x += 1
-                            raw.append(Rect(start_x, y, x - start_x, 1))
-                        else:
-                            x += 1
-
-                merged = []
-                for rect in raw:
-                    found = False
-                    for m in reversed(merged):
-                        if m.x == rect.x and m.width == rect.width and m.y + m.height == rect.y:
-                            m.height += rect.height
-                            found = True
-                            break
-                    if not found:
-                        merged.append(Rect(rect.x, rect.y, rect.width, rect.height))
-
-                for r in merged:
-                    results.append((cx + r.x, cy + r.y - 2, r.width, r.height))
-        except Exception:
-            pass
-        return results
-
-    def _refresh_blur(self):
-        if self._blur_ctx and user_options.theme.blur:
-            regions = self._trace_notifications(erode=12)
-            if regions:
-                set_blur_regions(self._blur_ctx, regions)
-        return False
-    def destroy(self):
-        if self._blur_ctx:
-            disable_blur(self._blur_ctx)
-            free_blur(self._blur_ctx)
-        super().destroy()

@@ -101,8 +101,8 @@ class UserOptions:
 
     class Theme:
         def __init__(self):
-            self.light_theme = "catppuccin-latte"
-            self.dark_theme = "catppuccin-mocha"
+            self.light_theme = "default"
+            self.dark_theme = "default"
             self.active_accent = "accent4"
             self.is_dark = True
             self.scheme_type = "scheme-tonal-spot"
@@ -110,6 +110,9 @@ class UserOptions:
             self.blur = False
             self.border_style = "medium"
             self.font_monospace_style = "none"
+            self.icon_pack = "default"
+            self.style_pack = None
+            self.sound_pack = None
 
     class Templates:
         def __init__(self):
@@ -122,6 +125,11 @@ class UserOptions:
     class Wallpaper:
         def __init__(self):
             self.path = f"{get_relative_path('wallpapers/wall14.jpg')}"
+            # Directory the wallpaper pickers list images from.
+            self.folder = f"{get_relative_path('wallpapers')}"
+            # How awww scales the image onto the output:
+            # "crop" (fill), "fit", "stretch" or "no".
+            self.resize = "crop"
 
     class DesktopApplets:
         def __init__(self):
@@ -260,6 +268,47 @@ class UserOptions:
                 entry["grid_y"] = candidate_gy
                 occupied |= _cells(gx, candidate_gy, cc, cr)
 
+    class Plugins:
+        def __init__(self):
+            self.enabled: list[str] = []
+
+        def enable(self, name: str) -> None:
+            if name not in self.enabled:
+                self.enabled.append(name)
+
+        def disable(self, name: str) -> None:
+            self.enabled = [n for n in self.enabled if n != name]
+
+        def is_enabled(self, name: str) -> bool:
+            return name in self.enabled
+    class Animations:
+        def __init__(self):
+            self.active_pack: str | None = "default"
+            self.shaders: bool = False
+            self.applet_reveal = {
+                "shader": "applet_reveal.frag",
+                "open_bezier":   [0.17, 0.67, 0, 1],
+                "close_bezier":  [0.16, 1.0, 0.3, 1.0],
+                "open_easing":   "default",
+                "close_easing":  "default",
+                "open_duration":  0.3,
+                "close_duration": 0.2,
+            }
+            self.dash_reveal = {
+                "shader": "dash_reveal.frag",
+                "open_bezier":   [0.16, 1.0, 0.3, 1.0],
+                "close_bezier":  [0.16, 1.0, 0.3, 1.0],
+                "open_easing":   "default",
+                "close_easing":  "default",
+                "open_duration":  0.3,
+                "close_duration": 0.3,
+            }
+            self.stack_transition = {
+                "shader":   "stack_transition.frag",
+                "bezier":   [0.4, 0.0, 0.2, 1.0],
+                "easing":   "default",
+                "duration": 0.25,
+            }
     def __init__(self):
         self.user = self.User()
         self.settings = self.Settings()
@@ -273,6 +322,8 @@ class UserOptions:
         self.wallpaper = self.Wallpaper()
         self.desktop_applets = self.DesktopApplets()
         self.desktop_canvas = self.DesktopCanvas()
+        self.plugins = self.Plugins()
+        self.animations = self.Animations()
         self._load()
 
     def _load(self) -> None:
@@ -318,7 +369,9 @@ class UserOptions:
                     "wallpaper",
                     "templates",
                     "desktop_applets",
-                    "desktop_canvas"
+                    "desktop_canvas",
+                    "plugins",
+                    "animations"
                 )
             }
 

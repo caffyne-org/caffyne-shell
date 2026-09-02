@@ -7,28 +7,21 @@ from .applets import DashAppletPage, AppletDropZone
 from .components import DashGroup, DashHeader
 from gi.repository import Gtk, Gdk, GLib, GtkLayerShell
 from services.singletons import edit_mode
-from .wallpapers import DashWallpaperPage
-from .themes import DashThemePage
 from snippets import DashReveal, enable_blur, disable_blur, free_blur
-import bar
 from services.desktop_applets import DesktopAppletService
+import bar
 
-DesktopAppletService.get_instance()
 display = Gdk.Display.get_default()
 
 REVEAL_DURATION = 300
 
 _PAGE_META = {
-    "apps":       ("diamonds-four-duotone",      "applets",    "themes-wallpapers", "paint-brush-broad-duotone", True),
-    "applets":    ("stack-duotone",              "apps",       "themes-wallpapers", "paint-brush-broad-duotone", False),
-    "wallpapers": ("images-duotone",             "themes",     "apps-applets",      "dash-duotone",              True),
-    "themes":     ("swatches-duotone",           "wallpapers", "apps-applets",      "dash-duotone",              False),
+    "apps":    ("diamonds-four", "applets", True),
+    "applets": ("stack",         "apps",    False),
 }
 _PAGE_LABELS = {
-    "apps":       "Apps",
-    "applets":    "Applets",
-    "wallpapers": "Wallpapers",
-    "themes":     "Themes",
+    "apps":    "Apps",
+    "applets": "Applets",
 }
 
 _PAGES_WITH_SEARCH = {"apps", "applets"}
@@ -147,10 +140,8 @@ class Dash(Window):
         self._in_canvas_mode: bool = False
         self._applet_drag_key: str | None = None
 
-        self.header    = DashHeader()
+        self.header    = DashHeader(dash=self)
         self.h_group_1 = DashGroup(transition_type="slide-left-right")
-        self.h_group_2 = DashGroup(transition_type="slide-left-right")
-        self.v_stack   = DashGroup(transition_type="slide-up-down")
 
         self.launcher   = DashLauncherPage(self)
         self.applets    = DashAppletPage(
@@ -159,8 +150,6 @@ class Dash(Window):
             on_applet_drag_begin=self._on_applet_drag_begin,
             on_applet_drag_end=self._on_applet_drag_end,
         )
-        self.themes     = DashThemePage(bar_manager=bar_manager)
-        self.wallpapers = DashWallpaperPage()
         self.dismiss_layer = DashDismissLayer(
             dash=self,
             on_dismiss=lambda: self.toggle(self._active_monitor),
@@ -169,19 +158,12 @@ class Dash(Window):
 
         self.launcher._applet_page_ref = self.applets
 
-        self.h_group_1.add_named(self.launcher,   "apps")
-        self.h_group_1.add_named(self.applets,    "applets")
-        self.h_group_2.add_named(self.wallpapers, "wallpapers")
-        self.h_group_2.add_named(self.themes,     "themes")
-        self.v_stack.add_named(self.h_group_2,    "themes-wallpapers")
-        self.v_stack.add_named(self.h_group_1,    "apps-applets")
-        self.v_stack.set_visible_child(self.h_group_1)
+        self.h_group_1.add_named(self.launcher, "apps")
+        self.h_group_1.add_named(self.applets,  "applets")
 
         self._name_to_page = {
-            "apps":       self.launcher,
-            "applets":    self.applets,
-            "wallpapers": self.wallpapers,
-            "themes":     self.themes,
+            "apps":    self.launcher,
+            "applets": self.applets,
         }
 
         self._main_box = Box(
@@ -189,15 +171,16 @@ class Dash(Window):
             h_expand=True,
             v_expand=True,
             spacing=24,
-            children=[self.header, self.v_stack],
+            children=[self.header, self.h_group_1],
         )
 
         self.revealer = DashReveal(
-            open_duration=0.15,
-            close_duration=0.2,
+            # open_duration=0.15,
+            # close_duration=0.2,
             child=self._main_box,
             h_expand=True,
             v_expand=True,
+        
         )
 
         super().__init__(
@@ -210,8 +193,6 @@ class Dash(Window):
         self.add_keybinding("escape", lambda: self.toggle())
         self.connect("key-press-event", self._on_key_press)
         self.h_group_1.connect("notify::visible-child", self._on_stack_changed)
-        self.h_group_2.connect("notify::visible-child", self._on_stack_changed)
-        self.v_stack.connect("notify::visible-child",   self._on_v_stack_changed)
 
         DesktopAppletService.get_instance().connect(
             "applets-changed",
@@ -275,7 +256,6 @@ class Dash(Window):
         if key is None:
             return
         self.dismiss_layer.hide_drop_zones()
-        self.v_stack.set_visible_child(self.h_group_1)
         self.h_group_1.set_visible_child(self.launcher)
         self._sync_header()
         self.launcher.enter_drag_receive_mode(key)
@@ -300,47 +280,31 @@ class Dash(Window):
 
 
     def _current_page_name(self) -> str:
-        v_child = self.v_stack.get_visible_child()
-        if v_child is self.h_group_1:
-            return "apps" if self.h_group_1.get_visible_child() is self.launcher else "applets"
-        else:
-            return "wallpapers" if self.h_group_2.get_visible_child() is self.wallpapers else "themes"
+        return "apps" if self.h_group_1.get_visible_child() is self.launcher else "applets"
 
     def _sync_header(self):
         name = self._current_page_name()
-        icon, peer_name, v_target, v_icon, current_on_left = _PAGE_META[name]
+        icon, peer_name, current_on_left = _PAGE_META[name]
         peer_icon  = _PAGE_META[peer_name][0]
         peer_label = _PAGE_LABELS[peer_name]
-        h_group    = self.h_group_1 if name in ("apps", "applets") else self.h_group_2
 
         self.header.update(
             current_icon=icon,
             peer_icon=peer_icon,
             peer_label=peer_label,
-            peer_h_callback=lambda: h_group.set_visible_child_name(peer_name),
-            v_icon=v_icon,
-            v_callback=lambda: self.v_stack.set_visible_child_name(v_target),
+            peer_h_callback=lambda: self.h_group_1.set_visible_child_name(peer_name),
             show_search=(name in _PAGES_WITH_SEARCH),
             current_on_left=current_on_left,
-            h_switcher_on_right=(name in ("wallpapers", "themes")),
         )
         if name in _PAGES_WITH_SEARCH:
             self._name_to_page[name]._attach_search_entry(self.header._entry)
 
     def _on_stack_changed(self, *_):
         self._sync_header()
-        on_applets = (
-            self.h_group_1.get_visible_child() is self.applets
-            and self.v_stack.get_visible_child() is not self.h_group_2
-        )
+        on_applets = self.h_group_1.get_visible_child() is self.applets
         edit_mode.enable() if on_applets else edit_mode.disable()
         if self.h_group_1.get_visible_child() is not self.launcher:
             self.launcher.exit_drag_receive_mode()
-
-    def _on_v_stack_changed(self, *_):
-        self._on_stack_changed()
-        self.h_group_1.set_visible_child(self.launcher)
-        self.h_group_2.set_visible_child(self.wallpapers)
 
 
     def toggle(self, active_monitor=None):
@@ -386,28 +350,14 @@ class Dash(Window):
 
     def toggle_applets(self, active_monitor=None):
         self.h_group_1.set_visible_child(self.applets)
-        self.v_stack.set_visible_child(self.h_group_1)
         if not self.is_visible():
             self.toggle(active_monitor)
         edit_mode.enable()
-
-    def toggle_wallpapers(self, active_monitor=None):
-        self.h_group_2.set_visible_child(self.wallpapers)
-        self.v_stack.set_visible_child(self.h_group_2)
-        if not self.is_visible():
-            self.toggle(active_monitor)
-
-    def toggle_themes(self, active_monitor=None):
-        self.v_stack.set_visible_child(self.h_group_2)
-        self.h_group_2.set_visible_child(self.themes)
-        if not self.is_visible():
-            self.toggle(active_monitor)
 
     def _hide(self):
         self.hide()
         self.launcher.exit_drag_receive_mode()
         if self._in_canvas_mode:
             self._exit_canvas_mode()
-        self.v_stack.set_visible_child(self.h_group_1)
         self.h_group_1.set_visible_child(self.launcher)
         edit_mode.disable()

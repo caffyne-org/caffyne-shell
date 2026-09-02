@@ -57,10 +57,10 @@ class WifiIcon(Icon):
         super().__init__(icon_name=self._get_icon(ap.strength), **kwargs)
 
     def _get_icon(self, strength: int) -> str:
-        if strength >= 75:   return "wifi-high-duotone"
-        elif strength >= 50: return "wifi-medium-duotone"
-        elif strength >= 25: return "wifi-low-duotone"
-        else:                return "wifi-none-duotone"
+        if strength >= 75:   return "wifi-high"
+        elif strength >= 50: return "wifi-medium"
+        elif strength >= 25: return "wifi-low"
+        else:                return "wifi-none"
 
 
 class AccessPointItem(Button):
@@ -152,7 +152,7 @@ class AccessPointItem(Button):
         super().destroy()
 
     def _get_security_icon(self, ap: AccessPoint) -> str:
-        return "shield-check-duotone" if ap.psk else "shield-duotone"
+        return "shield-check" if ap.psk else "shield"
 
 
 class _WifiTab:
@@ -301,7 +301,7 @@ class WifiMenu(QSAppletPage):
             title="Wifi",
             stack=stack if not parent else None,
             switch=self.switch,
-            button_icon_name="arrows-clockwise-duotone",
+            button_icon_name="arrows-clockwise",
             button_action=lambda btn: self._scan(btn),
             child=self.tab_stack,
             **kwargs,

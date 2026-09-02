@@ -5,7 +5,7 @@ from snippets import Icon
  
 class BrightnessButton(StatButton):
     def __init__(self, monitor_id, vertical, variant=None, **kwargs):
-        icon_name = "seal-duotone" if brightness.backend else "seal-warning-duotone"
+        icon_name = "seal" if brightness.backend else "seal-warning"
         self._current_brightness = brightness.screen_brightness
         super().__init__(
             icon=lambda size: Icon(icon_name=icon_name, icon_size=size),

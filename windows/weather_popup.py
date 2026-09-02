@@ -158,7 +158,7 @@ class WeatherPopup(Box):
             label=f"{weather.temperature:.0f}°C" if weather.temperature else "---",
             style_classes=["current-temp"]
         )
-        self._icon = Icon(icon_name="cloud-duotone", icon_size=36, style_classes=["current-icon"])
+        self._icon = Icon(icon_name="cloud", icon_size=36, style_classes=["current-icon"])
         self._high_label = Label(label="--°", style_classes=["high-temp"])
         self._low_label = Label(label="--°", style_classes=["low-temp"])
 
@@ -207,13 +207,13 @@ class WeatherPopup(Box):
                             h_align="end",
                             h_expand=True,
                             spacing=4,
-                            children=[self._high_label, Icon(icon_name="caret-up-duotone", icon_size=18)],
+                            children=[self._high_label, Icon(icon_name="caret-up", icon_size=18)],
                         ),
                         Box(
                             h_align="end",
                             h_expand=True,
                             spacing=4,
-                            children=[self._low_label, Icon(icon_name="caret-down-duotone", icon_size=18)],
+                            children=[self._low_label, Icon(icon_name="caret-down", icon_size=18)],
                         ),
                     ]
                 ),

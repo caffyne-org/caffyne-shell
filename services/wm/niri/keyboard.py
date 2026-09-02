@@ -16,11 +16,6 @@ class NiriKeyboardLayouts(WMKeyboardLayouts):
             self.notify("current-idx", "current-name")
 
     def switch_layout(self, layout: str) -> None:
-        """
-        layout can be:
-          "next" / "prev"  — cycle through layouts
-          "0", "1", ...    — switch to layout by index
-        """
         lower = layout.lower()
         if lower == "next":
             niri_layout = "Next"
@@ -30,7 +25,6 @@ class NiriKeyboardLayouts(WMKeyboardLayouts):
             try:
                 niri_layout = {"Index": int(layout)}
             except ValueError:
-                # Last resort: try treating it as a named action (Next/Prev)
                 niri_layout = layout
 
         self.__service.send_command(

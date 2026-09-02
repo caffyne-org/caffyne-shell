@@ -7,7 +7,7 @@ class NotificationButton(BaseButton):
 
     def __init__(self, monitor_id, vertical, variant=None, **kwargs):
         super().__init__(
-            icon=Icon(icon_name="bell-simple-duotone", icon_size=16),
+            icon=Icon(icon_name="bell-simple", icon_size=16),
             label="",
             variant=variant or "icon",
             **kwargs,
@@ -21,8 +21,8 @@ class NotificationButton(BaseButton):
     def _sync(self):
         count = len(notification_store.items)
         if count > 0:
-            self._update_icon("bell-simple-ringing-duotone")
+            self._update_icon("bell-simple-ringing")
             self._update_label(str(count))
         else:
-            self._update_icon("bell-simple-duotone")
+            self._update_icon("bell-simple")
             self._update_label("0")

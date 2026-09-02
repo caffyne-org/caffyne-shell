@@ -32,17 +32,17 @@ class BatteryIcon(Box):
 
     def _get_battery_icon(self) -> str:
         if not battery.available:
-            return "battery-vertical-empty-duotone"
+            return "battery-vertical-empty"
         if battery.charging or battery.charged:
-            return "battery-charging-vertical-duotone"
+            return "battery-charging-vertical"
         p = battery.percent
         if p > 80:
-            return "battery-vertical-full-duotone"
+            return "battery-vertical-full"
         elif p > 60:
-            return "battery-vertical-high-duotone"
+            return "battery-vertical-high"
         elif p > 40:
-            return "battery-vertical-medium-duotone"
+            return "battery-vertical-medium"
         elif p > 20:
-            return "battery-vertical-low-duotone"
+            return "battery-vertical-low"
         else:
-            return "battery-vertical-lower-duotone"
+            return "battery-vertical-lower"

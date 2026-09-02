@@ -23,7 +23,7 @@ class NoMediaPlaceholder(Box):
     def __init__(self, **kwargs):
         album_placeholder = Overlay(
             child=Box(style_classes=["player-art-placeholder"], style="min-width: 64px; min-height: 64px;"),
-            overlays=[Icon(icon_name="vinyl-record-duotone", icon_size=64)],
+            overlays=[Icon(icon_name="vinyl-record", icon_size=64)],
         )
 
         album_stack = Stack(children=[album_placeholder])
@@ -69,7 +69,7 @@ class NoMediaPlaceholder(Box):
                     children=[
                         Button(
                             style_classes=["applet-misc-button"],
-                            child=Icon(icon_name="skip-back-duotone"),
+                            child=Icon(icon_name="skip-back"),
                             sensitive=False,
                         ),
                         FlatScale(
@@ -83,12 +83,12 @@ class NoMediaPlaceholder(Box):
                         ),
                         Button(
                             style_classes=["applet-misc-button"],
-                            child=Icon(icon_name="skip-forward-duotone"),
+                            child=Icon(icon_name="skip-forward"),
                             sensitive=False,
                         ),
                         Button(
                             style_classes=["player-media-icon-button"],
-                            child=Icon(icon_name="play-duotone", style_classes=["player-media-icon"]),
+                            child=Icon(icon_name="play", style_classes=["player-media-icon"]),
                             sensitive=False,
                         ),
                     ],
@@ -108,7 +108,7 @@ class MediaPlayer(Box):
         self.cover_placeholder = Box(style_classes=["player-cover-placeholder"])
         self.album_placeholder = Overlay(
             child=Box(style_classes=["player-art-placeholder"], style="min-width: 64px; min-height: 64px;"),
-            overlays=[Icon(icon_name="vinyl-record-duotone", icon_size=64)],
+            overlays=[Icon(icon_name="vinyl-record", icon_size=64)],
         )
 
         self.cover_image = Image(
@@ -190,13 +190,13 @@ class MediaPlayer(Box):
                     children=[
                         Button(
                             style_classes=["applet-misc-button"],
-                            child=Icon(icon_name="skip-back-duotone"),
+                            child=Icon(icon_name="skip-back"),
                             on_clicked=lambda *_: service._player.previous(),
                         ),
                         self.position_scale,
                         Button(
                             style_classes=["applet-misc-button"],
-                            child=Icon(icon_name="skip-forward-duotone"),
+                            child=Icon(icon_name="skip-forward"),
                             on_clicked=lambda *_: service._player.next(),
                         ),
                         Button(
@@ -282,12 +282,12 @@ class PlayerStackSwitcher(CenterBox):
                 children=[
                     Button(
                         style_classes=["applet-misc-button"],
-                        child=Icon(icon_name="arrow-left-duotone"),
+                        child=Icon(icon_name="arrow-left"),
                         on_clicked=lambda *_: self._navigate(-1),
                     ),
                     Button(
                         style_classes=["applet-misc-button"],
-                        child=Icon(icon_name="arrow-right-duotone"),
+                        child=Icon(icon_name="arrow-right"),
                         on_clicked=lambda *_: self._navigate(1),
                     ),
                 ],

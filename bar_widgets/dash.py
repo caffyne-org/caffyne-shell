@@ -4,7 +4,7 @@ from services.singletons import edit_mode
 class DashButton(BaseButton):
     def __init__(self, monitor_id, vertical, variant=None, **kwargs):
         super().__init__(
-            icon=Icon(icon_name="caffyne-duotone"),
+            icon=Icon(icon_name="caffyne"),
             label="Dash",
             variant=variant or "icon+label",
             **kwargs,

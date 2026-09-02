@@ -6,6 +6,7 @@ from fabric.widgets.eventbox import EventBox
 from gi.repository import Gtk, Gdk, GLib
 from utils.sounds import play_sound
 import bar
+from services.singletons import plugins
 from .components import DashPage
 from snippets import Icon
 from user_options import user_options
@@ -13,27 +14,27 @@ from desktop_applets import DESKTOP_APPLET_SIZES
 import cairo
 
 ALL_BEAN_DATA: list[tuple[str, str]] = [
-    ("caffyne-duotone",                 "Dash"),
-    ("magnifying-glass-duotone",        "Launcher"),
-    ("dock-duotone",                    "Dock"),
-    ("cards-three-duotone",             "Workspaces"),
-    ("app-window-duotone",              "Focused"),
-    ("dots-three-circle-duotone",       "Tray"),
-    ("cpu-duotone",                     "Processes"),
-    ("clock-duotone",                   "Clock"),
-    ("calendar-blank-duotone",          "Calendar"),
-    ("cloud-sun-duotone",               "Weather"),
-    ("music-notes-duotone",             "Media"),
-    ("calculator-duotone",              "Calculator"),
-    ("bell-simple-duotone",             "Notifications"),
-    ("sliders-horizontal-duotone",      "Settings"),
-    ("power-duotone",                   "Session"),
-    ("lightning-duotone",               "Energy"),
-    ("keyboard-duotone",                "Keyboard"),
-    ("wifi-high-duotone",               "Wifi"),
-    ("bluetooth-duotone",               "Bluetooth"),
-    ("speaker-simple-high-duotone",     "Volume"),
-    ("seal-duotone",                    "Brightness"),
+    ("caffyne",                 "Dash"),
+    ("magnifying-glass",        "Launcher"),
+    ("dock",                    "Dock"),
+    ("cards-three",             "Workspaces"),
+    ("app-window",              "Focused"),
+    ("dots-three-circle",       "Tray"),
+    ("cpu",                     "Processes"),
+    ("clock",                   "Clock"),
+    ("calendar-blank",          "Calendar"),
+    ("cloud-sun",               "Weather"),
+    ("music-notes",             "Media"),
+    ("calculator",              "Calculator"),
+    ("bell-simple",             "Notifications"),
+    ("sliders-horizontal",      "Settings"),
+    ("power",                   "Session"),
+    ("lightning",               "Energy"),
+    ("keyboard",                "Keyboard"),
+    ("wifi-high",               "Wifi"),
+    ("bluetooth",               "Bluetooth"),
+    ("speaker-simple-high",     "Volume"),
+    ("seal",                    "Brightness"),
 ]
 
 
@@ -72,19 +73,19 @@ class DashAppletItem(Button):
 
         # Placement indicator row — icons appear/disappear via refresh_state()
         self._bar_indicator = Icon(
-            icon_name="bar-duotone",
+            icon_name="bar",
             icon_size=16,
             visible=False,
             tooltip_text="In bar",
         )
         self._launcher_indicator = Icon(
-            icon_name="dash-duotone",
+            icon_name="dash",
             icon_size=16,
             visible=False,
             tooltip_text="In launcher",
         )
         self._desktop_indicator = Icon(
-            icon_name="monitor-duotone",
+            icon_name="monitor",
             icon_size=16,
             visible=False,
             tooltip_text="On desktop",
@@ -209,7 +210,7 @@ class AppletDropZone(EventBox):
         self._on_hover_commit = on_hover_commit
         self._hover_timer: int | None = None
 
-        icon_name = "dash-duotone" if side == "left" else "monitor-duotone"
+        icon_name = "dash" if side == "left" else "monitor"
         label_text = "Dash" if side == "left" else "Desktop"
 
         inner = Box(
@@ -304,6 +305,32 @@ class DashAppletPage(DashPage):
         )
         self.grid.connect("drag-data-received", self._on_grid_drag_received)
         self.grid.connect("drag-motion", self._on_grid_drag_motion)
+        plugins.connect("plugin-enabled", self._on_plugin_enabled)
+        plugins.connect("plugin-disabled", self._on_plugin_disabled)
+
+    def _on_plugin_enabled(self, _, name: str) -> None:
+        # Add to item list and map if not already there
+        mod = plugins._loaded.get(name)
+        if mod is None:
+            return
+        icon = getattr(mod, "ICON", "placeholder")
+        if name not in self._item_map:
+            item = DashAppletItem(icon, name, on_drag_end=self._handle_drag_end)
+            item._page_drag_begin_cb = self._handle_drag_begin
+            self._item_map[name] = item
+        if not any(k == name for _, k in self._all_items):
+            self._all_items.append((icon, name))
+        self._render_items(self._all_items)
+        self.refresh_bar_state()
+
+    def _on_plugin_disabled(self, _, name: str) -> None:
+        # Remove from item map and list
+        item = self._item_map.pop(name, None)
+        if item:
+            item.destroy()
+        self._all_items = [(icon, k) for icon, k in self._all_items if k != name]
+        self._render_items(self._all_items)
+        self.refresh_bar_state()
 
     def _handle_drag_begin(self, key: str) -> None:
         in_launcher  = key in self._get_launcher_keys()

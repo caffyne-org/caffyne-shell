@@ -93,7 +93,7 @@ class ProcessMonitorPage(AppletPage):
             ),
             header_right_children=Button(
                 style_classes=["applet-misc-button"],
-                child=Icon(icon_name="list-magnifying-glass-duotone"),
+                child=Icon(icon_name="list-magnifying-glass"),
                 on_clicked=lambda *_: stack.set_visible_child_name("processes"),
             ),
         )
@@ -236,7 +236,7 @@ class ProcessesMenu(AppletPage):
             style_classes=["launcher-search"],
             spacing=8,
             children=[
-                Icon(icon_name="magnifying-glass-duotone", icon_size=16),
+                Icon(icon_name="magnifying-glass", icon_size=16),
                 self.search_entry,
             ],
         )

@@ -1,10 +1,7 @@
 import os
-import gc
-import hashlib
 import weakref
 import threading
 
-from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, Future
 
 from fabric.utils import monitor_file
@@ -12,77 +9,36 @@ from fabric.widgets.box import Box
 from fabric.widgets.button import Button
 from fabric.widgets.image import Image
 from fabric.widgets.centerbox import CenterBox
-from gi.repository import GdkPixbuf, GLib, Gio
+from gi.repository import GLib, Gio
 from snippets import Icon, ClippingScrolledWindow, ClippingBox
-from services.themes import wallpaper
-from PIL import Image as PilImage
+from services.themes import wp
+from user_options import user_options
+from utils.wallpaper_cache import (
+    SUPPORTED_EXTS,
+    cached_image,
+    list_wallpapers,
+    load_pixbuf,
+)
 
 THUMBNAIL_SIZE = 174
-SUPPORTED_EXTS = (".jpg", ".jpeg", ".png", ".webp", ".bmp")
 
 PREVIEW_WIDTH  = 918
 PREVIEW_HEIGHT = 546
 
-THUMB_CACHE_DIR   = Path.home() / ".cache" / "caffyne-shell" / "thumbnails"
-PREVIEW_CACHE_DIR = Path.home() / ".cache" / "caffyne-shell" / "previews"
+THUMB_VARIANT   = "thumbnails"
+PREVIEW_VARIANT = "previews"
 
-def _fast_cache_key(path: str) -> str:
-    stat = os.stat(path)
-    raw  = f"{path}:{stat.st_mtime}:{stat.st_size}"
-    return hashlib.sha256(raw.encode()).hexdigest()
+def _generate_thumb_to_cache(file_path: str, size: int):
+    return cached_image(file_path, THUMB_VARIANT, size, size)
 
-def _get_thumb_cache_path(file_path: str) -> Path:
-    return THUMB_CACHE_DIR / f"{_fast_cache_key(file_path)}.jpg"
+def _generate_preview_to_cache(file_path: str):
+    return cached_image(
+        file_path, PREVIEW_VARIANT, PREVIEW_WIDTH, PREVIEW_HEIGHT,
+        crop=False, quality=88,
+    )
 
-def _get_preview_cache_path(file_path: str) -> Path:
-    return PREVIEW_CACHE_DIR / f"{_fast_cache_key(file_path)}.jpg"
-
-def _generate_thumb_to_cache(file_path: str, size: int) -> Path | None:
-    try:
-        THUMB_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        cache_path = _get_thumb_cache_path(file_path)
-        if not cache_path.exists():
-            with PilImage.open(file_path) as img:
-
-                if hasattr(img, "draft"):
-                    img.draft("RGB", (size * 2, size * 2))
-                if img.mode != "RGB":
-                    img = img.convert("RGB")
-                w, h  = img.size
-                side  = min(w, h)
-                left  = (w - side) // 2
-                top   = (h - side) // 2
-                thumb = img.crop((left, top, left + side, top + side)).resize(
-                    (size, size), PilImage.Resampling.LANCZOS
-                )
-                thumb.save(cache_path, "JPEG", quality=85, optimize=True)
-                del thumb
-            gc.collect()
-        return cache_path
-    except Exception:
-        return None
-
-def _generate_preview_to_cache(file_path: str) -> Path | None:
-    try:
-        PREVIEW_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        cache_path = _get_preview_cache_path(file_path)
-        if not cache_path.exists():
-            with PilImage.open(file_path) as img:
-                img.draft("RGB", (PREVIEW_WIDTH, PREVIEW_HEIGHT))
-                if img.mode != "RGB":
-                    img = img.convert("RGB")
-                img = img.resize((PREVIEW_WIDTH, PREVIEW_HEIGHT), PilImage.Resampling.LANCZOS)
-                img.save(cache_path, "JPEG", quality=88, optimize=True)
-            gc.collect()
-        return cache_path
-    except Exception:
-        return None
-    
-def _load_pixbuf_from_path(cache_path: Path):
-    try:
-        return GdkPixbuf.Pixbuf.new_from_file(str(cache_path))
-    except Exception:
-        return None
+def _load_pixbuf_from_path(cache_path):
+    return load_pixbuf(cache_path)
 
 class SelectorHeader(CenterBox):
     def __init__(self, h_stack, v_stack, left_icon_name, right_icon_name, h_target, v_target):
@@ -245,10 +201,10 @@ class DashWallpaperPage(DashSelectorPage):
         self.connect("realize", self._on_realize)
         self._load_wallpapers()
 
-        if wallpaper.wallpaper_path:
-            self._restore_active(wallpaper.wallpaper_path)
+        if wp.wallpaper_path:
+            self._restore_active(wp.wallpaper_path)
 
-        wallpaper.connect("wallpaper-changed", self._on_wallpaper_changed)
+        wp.connect("wallpaper-changed", self._on_wallpaper_changed)
 
     def _on_wallpaper_changed(self, service, path: str) -> None:
         GLib.idle_add(self._refresh_and_select, path)
@@ -286,14 +242,14 @@ class DashWallpaperPage(DashSelectorPage):
     def _on_became_visible(self) -> None:
         if not self._thumb_strip.get_children():
             self._load_wallpapers()
-            if wallpaper.wallpaper_path:
-                self._restore_active(wallpaper.wallpaper_path)
+            if wp.wallpaper_path:
+                self._restore_active(wp.wallpaper_path)
         else:
             GLib.idle_add(self._on_scroll_changed, self._scroll.get_vadjustment())
             if self._active_thumb:
                 self._update_preview(self._active_thumb.path)
-            elif wallpaper.wallpaper_path:
-                self._update_preview(wallpaper.wallpaper_path)
+            elif wp.wallpaper_path:
+                self._update_preview(wp.wallpaper_path)
 
     def _on_became_hidden(self) -> None:
         self._unload_all_thumbs()
@@ -320,16 +276,12 @@ class DashWallpaperPage(DashSelectorPage):
         self._preview_image.set_from_pixbuf(None)
 
     def _load_wallpapers(self) -> None:
-        walls_dir = os.path.expanduser("~/.config/caffyne-shell/wallpapers")
+        walls_dir = user_options.wallpaper.folder
         if not os.path.isdir(walls_dir):
             return
 
         def load():
-            paths = sorted(
-                os.path.join(walls_dir, f)
-                for f in os.listdir(walls_dir)
-                if f.lower().endswith(SUPPORTED_EXTS)
-            )
+            paths = list_wallpapers(walls_dir)
             def apply():
                 for path in paths:
                     thumb = WallpaperThumb(path, self._on_thumb_clicked)
@@ -374,7 +326,7 @@ class DashWallpaperPage(DashSelectorPage):
 
     def _on_thumb_clicked(self, thumb: WallpaperThumb) -> None:
         self._set_active(thumb)
-        wallpaper.set_wallpaper(thumb.path)
+        wp.set_wallpaper(thumb.path)
 
     def _set_active(self, thumb: WallpaperThumb) -> None:
         if self._active_thumb:

@@ -1,6 +1,6 @@
 import cairo
 import math
-from snippets.blur.region_trace import trace_widget_regions
+from snippets.blur.region_trace import trace_widget
 from gi.repository import GLib
 
 _RETRACE_DELAY_MS = 120
@@ -81,14 +81,14 @@ class _ShadowState:
 
     def _do_retrace(self):
         self._retrace_source = None
-        rects = trace_widget_regions(self.window, accuracy=1, alpha_threshold=10)
+        rects = trace_widget(self.window, min_alpha=10, relative_alpha=0.0, inset=4)
         new_surface = _render_to_surface(self.window, rects, self.radius, self.colour)
         self._surface = new_surface
         self.window.queue_draw()
         return False
 
     def _retrace_idle(self):
-        rects = trace_widget_regions(self.window, accuracy=1, alpha_threshold=10)
+        rects = trace_widget(self.window, min_alpha=10, relative_alpha=0.0, inset=4)
         new_surface = _render_to_surface(self.window, rects, self.radius, self.colour)
 
         self._surface = new_surface

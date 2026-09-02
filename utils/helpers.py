@@ -9,7 +9,7 @@ _resolver = IconResolver()
 def get_app_icon_name(app_id: str) -> str | None:
     return _resolver.get_icon(app_id)
 
-def popup_with_blur(menu: Gtk.Menu, event, accuracy: int = 1):
+def popup_with_blur(menu: Gtk.Menu, event, step: int = 1):
     blur_ctx = None
 
     def do_blur():
@@ -17,7 +17,7 @@ def popup_with_blur(menu: Gtk.Menu, event, accuracy: int = 1):
         blur_ctx = enable_blur(menu)
         def do_set_regions():
             if blur_ctx:
-                set_blur_regions_from_widget(blur_ctx, menu, accuracy, erode=0)
+                set_blur_regions_from_widget(blur_ctx, menu, step=step)
             return False
         GLib.timeout_add(50, do_set_regions)
 

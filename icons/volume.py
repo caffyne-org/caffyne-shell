@@ -39,14 +39,14 @@ class VolumeIcon(Box):
     def _get_volume_icon(self) -> str:
         spk = self._stream or audio.speaker
         if not spk:
-            return "speaker-simple-x-duotone"
+            return "speaker-simple-x"
         if spk.muted:
-            return "speaker-simple-slash-duotone"
+            return "speaker-simple-slash"
         elif spk.volume > 67:
-            return "speaker-simple-high-duotone"
+            return "speaker-simple-high"
         elif spk.volume > 33:
-            return "speaker-simple-low-duotone"
+            return "speaker-simple-low"
         elif spk.volume > 0:
-            return "speaker-simple-none-duotone"
+            return "speaker-simple-none"
         else:
-            return "speaker-simple-x-duotone"
+            return "speaker-simple-x"

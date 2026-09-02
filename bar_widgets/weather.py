@@ -5,7 +5,7 @@ from services.singletons import weather
 class WeatherButton(BaseButton):
     def __init__(self, monitor_id, vertical, variant=None, **kwargs):
         super().__init__(
-            icon=Icon(icon_size=18, style_classes=["weather-icon"], icon_name="cloud-duotone"),
+            icon=Icon(icon_size=18, style_classes=["weather-icon"], icon_name="cloud"),
             label="--°C",
             variant=variant or "icon+label",
             **kwargs,

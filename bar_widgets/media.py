@@ -16,7 +16,7 @@ class MediaPlayer(Box):
         super().__init__(
             spacing=4,
             children=[
-                Icon(icon_name="music-notes-duotone"),
+                Icon(icon_name="music-notes"),
                 EventBox(child=self.label),
             ],
         )
@@ -58,7 +58,7 @@ class Media(Box):
             visible=False,
             style_classes=["bar-button", "edit-overlay"],
             children=[
-                Icon(icon_name="music-notes-duotone"),
+                Icon(icon_name="music-notes"),
                 Label(label="Media"),
             ],
         )
@@ -68,7 +68,7 @@ class Media(Box):
             visible=False,
             style_classes=["bar-button"],
             children=[
-                Icon(icon_name="music-notes-duotone"),
+                Icon(icon_name="music-notes"),
             ],
         )
 

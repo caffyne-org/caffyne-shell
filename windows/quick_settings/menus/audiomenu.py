@@ -9,7 +9,7 @@ from services.singletons import audio
 class StreamItem(Box):
     def __init__(self, stream, microphone: bool):
         self.checkmark = Icon(
-            icon_name="check-circle-duotone",
+            icon_name="check-circle",
             icon_size=16,
             # style_classes=["qs-checkmark-active"] if self._is_default(stream) else [],
         )

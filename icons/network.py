@@ -6,9 +6,9 @@ class NetworkIcon(Box):
     def __init__(self, size: int, **kwargs):
         self._size = size
 
-        self._wifi_icon = Icon(icon_name="wifi-none-duotone", icon_size=size)
+        self._wifi_icon = Icon(icon_name="wifi-none", icon_size=size)
         self._ethernet_icon = Icon(
-            icon_name="network-duotone",
+            icon_name="network",
             icon_size=size,
         )
 
@@ -40,14 +40,14 @@ class NetworkIcon(Box):
     def _get_wifi_icon(self) -> str:
         wifi = network.wifi_device
         if not wifi or wifi.internet != "activated":
-            return "wifi-x-duotone"
+            return "wifi-x"
 
         s = wifi.strength
         if s >= 75:
-            return "wifi-high-duotone"
+            return "wifi-high"
         elif s >= 50:
-            return "wifi-medium-duotone"
+            return "wifi-medium"
         elif s >= 25:
-            return "wifi-low-duotone"
+            return "wifi-low"
         else:
-            return "wifi-none-duotone"
+            return "wifi-none"

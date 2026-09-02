@@ -6,7 +6,7 @@ class KeyboardButton(QSButton):
     def __init__(self, stack):
         super().__init__(
             icon = Icon(
-                icon_name="keyboard-duotone",
+                icon_name="keyboard",
                 pixel_size=16
             ),
             label = Label(

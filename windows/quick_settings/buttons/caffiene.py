@@ -5,7 +5,7 @@ from services.singletons import idle
 class CaffieneButton(QSButton):
     def __init__(self, **kwargs):
         super().__init__(
-            icon=Icon(icon_name="coffee-duotone"),
+            icon=Icon(icon_name="coffee"),
             on_activate=lambda _: idle.stop(),
             on_deactivate=lambda _: idle.start(),
             **kwargs,

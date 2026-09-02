@@ -31,7 +31,7 @@ class DesktopNoMediaPlaceholder(Box):
                     style_classes=["player-art-placeholder"],
                     style="min-width: 36px; min-height: 36px;",
                     v_align="center",
-                    children=[Icon(icon_name="vinyl-record-duotone", icon_size=36)],
+                    children=[Icon(icon_name="vinyl-record", icon_size=36)],
                 ),
                 h_align="start", style="min-height: 36px;"),
                 # Middle: "No Media" label
@@ -58,7 +58,7 @@ class DesktopNoMediaPlaceholder(Box):
                     children=[
                         Button(
                             style_classes=["applet-misc-button"],
-                            child=Icon(icon_name="skip-back-duotone"),
+                            child=Icon(icon_name="skip-back"),
                             sensitive=False,
                         ),
                         FlatScale(
@@ -72,13 +72,13 @@ class DesktopNoMediaPlaceholder(Box):
                         ),
                         Button(
                             style_classes=["applet-misc-button"],
-                            child=Icon(icon_name="skip-forward-duotone"),
+                            child=Icon(icon_name="skip-forward"),
                             sensitive=False,
                         ),
                         Button(
                             style_classes=["player-media-icon-button"],
                             child=Icon(
-                                icon_name="play-duotone",
+                                icon_name="play",
                                 style_classes=["player-media-icon"],
                             ),
                             sensitive=False,
@@ -100,7 +100,7 @@ class DesktopMediaPlayer(Box):
         self.album_placeholder = Box(
             style_classes=["player-art-placeholder"],
             style="min-width: 36px; min-height: 36px;",
-            children=[Icon(icon_name="vinyl-record-duotone", icon_size=36)],
+            children=[Icon(icon_name="vinyl-record", icon_size=36)],
         )
         self.album_art = Image(size=(36, 36), style="border-radius: 12px;")
 
@@ -190,13 +190,13 @@ class DesktopMediaPlayer(Box):
                             children=[
                                 Button(
                                     style_classes=["applet-misc-button"],
-                                    child=Icon(icon_name="skip-back-duotone"),
+                                    child=Icon(icon_name="skip-back"),
                                     on_clicked=lambda *_: service._player.previous(),
                                 ),
                                 self.position_scale,
                                 Button(
                                     style_classes=["applet-misc-button"],
-                                    child=Icon(icon_name="skip-forward-duotone"),
+                                    child=Icon(icon_name="skip-forward"),
                                     on_clicked=lambda *_: service._player.next(),
                                 ),
                                 Button(

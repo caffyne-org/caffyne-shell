@@ -2,12 +2,6 @@ from fabric.core.service import Service, Property
 
 
 class NiriWindowLayout(Service):
-    """
-    Niri-specific window layout data.
-    Not part of the WMWindow base — only available on NiriWindow.
-    Widgets that use this (e.g. icon ordering) should call window.sort_key()
-    instead of accessing layout directly, for portability.
-    """
 
     @Property(object, "readable", default_value=None)
     def pos_in_scrolling_layout(self) -> list | None:

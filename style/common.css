@@ -7,7 +7,8 @@
 @define-color placeholder_text_color var(--on_surface_variant);
 
 .corner {
-    color: var(--background);
+    background-color: var(--background);
+    border: 1px solid var(--outline_variant);
 }
 
 .progress-bar {

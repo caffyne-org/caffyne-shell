@@ -25,13 +25,13 @@ class IdleTimeoutBox(Box):
 
         self.power_adjuster = TimeoutAdjuster(
             initial_minutes=initial_ac_minutes,
-            icon_name="plug-duotone",
+            icon_name="plug",
             on_change=lambda mins: setattr(self, "pending_ac", mins),
         )
 
         self.bat_adjuster = TimeoutAdjuster(
             initial_minutes=initial_bat_minutes,
-            icon_name="battery-vertical-full-duotone",
+            icon_name="battery-vertical-full",
             on_change=lambda mins: setattr(self, "pending_bat", mins),
         ) if battery.available else None
 

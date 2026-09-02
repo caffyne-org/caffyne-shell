@@ -9,18 +9,28 @@ from .menus import WifiMenu, BluetoothMenu, AudioMenu, KeyboardMenu, LogoutMenu,
 
 
 class QuickSettingsMenu(AppletPage):
-    def __init__(self, stack, **kwargs):
+    def __init__(self, stack, parent, **kwargs):
         super().__init__(
             first=True,
             header_left_children=Button(
                 style_classes=["applet-misc-button", "battery"],
-                child=BatteryIcon(size=16, percent=True) if battery and battery.available else Icon(icon_name="lightning-duotone"),
+                child=BatteryIcon(size=16, percent=True) if battery and battery.available else Icon(icon_name="lightning"),
                 on_clicked=lambda *_: stack.set_visible_child_name("power"),
             ),
-            header_right_children=Button(
-                style_classes=["applet-misc-button"],
-                child=Icon(icon_name="power-duotone", icon_size=16),
-                on_clicked=lambda *_: stack.set_visible_child_name("logout"),
+            header_right_children=Box(
+                spacing=6,
+                children=[
+                Button(
+                    style_classes=["applet-misc-button"],
+                    child=Icon(icon_name="nut", icon_size=16),
+                    on_clicked=lambda *_: (self.show_settings(), parent.toggle()),
+                ),
+                Button(
+                    style_classes=["applet-misc-button"],
+                    child=Icon(icon_name="power", icon_size=16),
+                    on_clicked=lambda *_: stack.set_visible_child_name("logout"),
+                )
+                ]
             ),
             child=Box(
                 orientation="v",
@@ -69,12 +79,16 @@ class QuickSettingsMenu(AppletPage):
             ),
             **kwargs,
         )
+    def show_settings(self):
+        from services.singletons import settings
+        settings.show()
+
 
 
 class QuickSettings(Applet):
     def __init__(self, parent, **kwargs):
         super().__init__(
-            main_menu=QuickSettingsMenu(self),
+            main_menu=QuickSettingsMenu(self, parent),
             **kwargs,
         )
         self.add_menu("wifi", WifiMenu)

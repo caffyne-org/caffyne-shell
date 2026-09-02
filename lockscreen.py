@@ -140,7 +140,7 @@ class LockScreen(Window):
         self._entry_box = Box(
             spacing=6,
             style_classes=["lockscreen-entry-box"],
-            children=[Icon(icon_name="key-duotone", icon_size=16), self._entry_field],
+            children=[Icon(icon_name="key", icon_size=16), self._entry_field],
         )
         self._entry_row = Box(
             spacing=6,
@@ -148,7 +148,7 @@ class LockScreen(Window):
                 self._entry_box,
                 Button(
                     style_classes=["lockscreen-submit-button"],
-                    child=Icon(icon_name="caret-double-right-duotone", icon_size=16),
+                    child=Icon(icon_name="caret-double-right", icon_size=16),
                     on_pressed=lambda _: self._on_activate(self._entry_field),
                 ),
             ],
@@ -158,7 +158,7 @@ class LockScreen(Window):
             spacing=18,
             h_align="center",
             children=[
-                Icon(icon_size=48, icon_name="lock-duotone"),
+                Icon(icon_size=48, icon_name="lock"),
                 Label(label="Locked", style="font-size: 20px; font-weight: bold;"),
                 Label(label="Please enter your password.", style="opacity: 0.8; font-size: 14px;"),
                 self._entry_row,

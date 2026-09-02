@@ -29,5 +29,5 @@ class MicrophoneIcon(Box):
     def _get_mic_icon(self) -> str:
         src = self._stream or audio.microphone
         if src and src.muted:
-            return "microphone-slash-duotone"
-        return "microphone-duotone"
+            return "microphone-slash"
+        return "microphone"

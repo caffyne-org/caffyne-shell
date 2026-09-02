@@ -22,6 +22,8 @@ AWWW_TRANSITION_FPS      = 60
 AWWW_TRANSITION_DURATION = 1.5
 AWWW_TRANSITION_BEZIER   = ".43,1.19,1,.4"
 
+RESIZE_MODES = ("no", "crop", "fit", "stretch")
+
 DEFAULT_WALLPAPER_PATH = os.path.join(os.path.dirname(__file__), "assets/default-wallpaper.jpg")
 
 def _generate_blurred_cache(path: str, blur_radius: int = 20) -> None:
@@ -44,15 +46,9 @@ def _awww_set(
     path: str,
     pos: tuple[float, float] | None = None,
 ) -> None:
-    """
-    Shell out to awww to set the wallpaper with a grow (circle-reveal) transition.
-
-    `pos` is a normalised coordinate within the drop monitor — awww takes it as
-    "x,y" where each value is either a pixel count or a float fraction (0.0–1.0).
-    We pass fractions so it works regardless of monitor resolution.
-    If pos is None we default to center.
-    """
     x, y = pos if pos is not None else (0.5, 0.5)
+
+    opts = user_options.wallpaper
 
     cmd = [
         "awww", "img", path,
@@ -63,6 +59,10 @@ def _awww_set(
         "--transition-bezier",   AWWW_TRANSITION_BEZIER,
     ]
 
+    resize = getattr(opts, "resize", "crop")
+    if resize in RESIZE_MODES:
+        cmd += ["--resize", resize]
+
     try:
         subprocess.Popen(cmd)
         logger.info(f"awww: set {path!r} with grow from ({x:.3f}, {y:.3f})")
@@ -72,14 +72,6 @@ def _awww_set(
         logger.error(f"awww: failed to run: {e}")
 
 class WallpaperDropWindow(WaylandWindow):
-    """
-    A fullscreen, fully transparent layer-shell window whose only job is to
-    receive drag-and-drop events and forward them to WallpaperService.
-
-    It sits in the background layer (below everything) and passes all input
-    through, so it never interferes with normal desktop use.
-    """
-
     def __init__(self, monitor_id: int) -> None:
         self._monitor_id = monitor_id
         self._box = EventBox(h_expand=True, v_expand=True)
@@ -183,25 +175,6 @@ class WallpaperDropWindow(WaylandWindow):
         context.finish(True, False, timestamp)
 
 class WallpaperService(Service):
-    """
-    Wallpaper service backed by awww.
-
-    Maintains one invisible drop-target window per monitor. When a file is
-    dropped, the normalised position within that monitor is forwarded to
-    `awww img --transition-type grow --transition-pos x,y` so the circle-reveal
-    originates exactly where the user dropped the file.
-
-    awww handles all rendering, animation and multi-monitor sync natively —
-    this service is just the thin Fabric glue layer.
-
-    Usage:
-        service = WallpaperService.get_instance()
-        service.set_wallpaper("path/to/image.jpg")
-        service.set_wallpaper("path/to/image.jpg", pos=(0.5, 0.5))
-
-    Listen for changes:
-        service.connect("wallpaper-changed", lambda svc, path: print(path))
-    """
 
     _instance: "WallpaperService | None" = None
 
@@ -312,6 +285,7 @@ class WallpaperService(Service):
                 return False
         GLib.timeout_add(4000, cleanup_mem)
         GLib.timeout_add(int(AWWW_TRANSITION_DURATION * 1000) + 100, copy_to_cache)
+        # self.emit("wallpaper-changed", path)
 
     def _sync_monitors(self) -> None:
         display  = Gdk.Display.get_default()

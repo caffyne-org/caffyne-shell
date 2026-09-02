@@ -3,8 +3,7 @@ from fabric.widgets.label import Label
 from fabric.widgets.button import Button
 from fabric.widgets.centerbox import CenterBox
 from snippets import Icon
-from .hacktk.hacktk import HackedStack
-
+from .applet_stack import AppletStack
 
 class AppletPage(Box):
     def __init__(
@@ -58,11 +57,11 @@ class Applet(Box):
             end_children=self._right_slot,
         )
 
-        self._stack = HackedStack(
+        self._stack = AppletStack(
             style_classes=["applet-stack"],
             transition_type="slide-left-right",
-            bezier_curve=(0.34, 1.3, 0.64, 1.0),
-            duration=0.45,
+            # bezier_curve=(0.34, 1.3, 0.64, 1.0),
+            # duration=0.45,
         )
         self._stack.add_named(main_menu, "main")
         self._stack.connect("notify::visible-child", self._on_page_changed)

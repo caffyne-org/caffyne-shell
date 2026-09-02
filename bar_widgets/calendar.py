@@ -6,7 +6,7 @@ from snippets import Icon
 class CalendarButton(BaseButton):
     def __init__(self, monitor_id, vertical, variant=None, **kwargs):
         super().__init__(
-            icon=Icon(icon_name="calendar-blank-duotone", icon_size=16),
+            icon=Icon(icon_name="calendar-blank", icon_size=16),
             label=self._get_label(),
             variant=variant or "icon+label",
             **kwargs,

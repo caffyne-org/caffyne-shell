@@ -20,15 +20,15 @@ ACCENT_DOT   = 16
 MAX_DOTS     = 4
 
 RADIUS_MAP = {
-    "sharp":  {"radius-s": "0px",  "radius-m": "0px",  "radius-l": "0px",  "radius-xl": "0px"},
-    "medium": {"radius-s": "4px",  "radius-m": "10px", "radius-l": "16px", "radius-xl": "28px"},
-    "round":  {"radius-s": "12px", "radius-m": "18px", "radius-l": "24px", "radius-xl": "36px"},
+    "Sharp":  {"radius-s": "0px",  "radius-m": "0px",  "radius-l": "0px",  "radius-xl": "0px"},
+    "Medium": {"radius-s": "4px",  "radius-m": "10px", "radius-l": "16px", "radius-xl": "28px"},
+    "Round":  {"radius-s": "12px", "radius-m": "18px", "radius-l": "24px", "radius-xl": "36px"},
 }
 
 FONT_MAP = {
-    "none":  {"mixed-mono": "unset",  "always-mono": "unset"},
-    "mixed": {"mixed-mono": "monospace",  "always-mono": "unset"},
-    "all":  {"mixed-mono": "monospace", "always-mono": "monospace"},
+    "None":  {"mixed-mono": "unset",  "always-mono": "unset"},
+    "Mixed": {"mixed-mono": "monospace",  "always-mono": "unset"},
+    "ll":  {"mixed-mono": "monospace", "always-mono": "monospace"},
 }
 
 def _color_dot(hex_color: str, size: int = ACCENT_DOT, active: bool = False) -> Gtk.Widget:
@@ -52,7 +52,7 @@ class TemplateRefreshRow(Box):
 
         self._btn = Button(
             style_classes=["applet-misc-button", "template-refresh-button"],
-            child=Icon(icon_name="arrows-clockwise-duotone", icon_size=16),
+            child=Icon(icon_name="arrows-clockwise", icon_size=16),
             on_clicked=self._on_clicked,
             tooltip_text="Pull the latest templates from Github"
         )
@@ -129,7 +129,7 @@ class TemplateRow(EventBox):
                             v_align="center",
                             v_expand=True,
                             style_classes=["template-info-button"],
-                            child=Icon(icon_name="info-duotone", icon_size=20),
+                            child=Icon(icon_name="info", icon_size=20),
                             tooltip_markup=notes_text
                         ) if notes_text else Box(),
                         Box(children=self._switch),
@@ -303,7 +303,7 @@ class MatugenThumb(Button):
             style_classes=["matugen-thumb"],
             children=[
                 Label(v_expand=True, v_align="end", label="Material Colors", style="font-size: 14px;"),
-                Icon(v_expand=True, v_align="start", icon_name="android-logo-duotone", icon_size=36),
+                Icon(v_expand=True, v_align="start", icon_name="android-logo", icon_size=36),
             ],
         )
 

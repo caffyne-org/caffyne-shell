@@ -32,7 +32,7 @@ class ConfirmPage(AppletPage):
             style="font-size: 16px;",
             h_align="center",
         )
-        self._icon = Icon(icon_name="power-duotone", icon_size=64, v_expand=True, v_align="end")
+        self._icon = Icon(icon_name="power", icon_size=64, v_expand=True, v_align="end")
         self._confirm_btn = Button(
             v_expand=True,
             v_align="end",
@@ -105,9 +105,9 @@ class LogoutMenu(QSAppletPage):
                 stack.set_visible_child_name("power-confirm")
 
         self.sign_out_button = PowerButton(
-            icon_name="sign-out-duotone",
+            icon_name="sign-out",
             label="Logout",
-            on_clicked=lambda *_: confirm("sign-out-duotone", "Logout", _wm_logout, should_sound=True),
+            on_clicked=lambda *_: confirm("sign-out", "Logout", _wm_logout, should_sound=True),
         )
 
         super().__init__(
@@ -120,7 +120,7 @@ class LogoutMenu(QSAppletPage):
                     Box(spacing=6, h_expand=True, children=[
                         self.sign_out_button,
                         PowerButton(
-                            icon_name="lock-duotone",
+                            icon_name="lock",
                             label="Lock",
                             on_clicked=lambda *_: [
                                 self._parent.toggle(),
@@ -134,29 +134,29 @@ class LogoutMenu(QSAppletPage):
                     ]),
                     Box(spacing=6, h_expand=True, children=[
                         PowerButton(
-                            icon_name="arrow-clockwise-duotone",
+                            icon_name="arrow-clockwise",
                             label="Reboot",
                             on_clicked=lambda *_: confirm(
-                                "arrow-clockwise-duotone", "Reboot",
+                                "arrow-clockwise", "Reboot",
                                 lambda: subprocess.Popen(f"{SESSION_MANAGER} reboot", shell=True),
                                 should_sound=True
                             ),
                         ),
                         PowerButton(
-                            icon_name="pause-circle-duotone",
+                            icon_name="pause-circle",
                             label="Suspend",
                             on_clicked=lambda *_: confirm(
-                                "pause-circle-duotone", "Suspend",
+                                "pause-circle", "Suspend",
                                 lambda: subprocess.Popen(f"{SESSION_MANAGER} suspend", shell=True),
                             ),
                         ),
                     ]),
                     Box(spacing=6, h_expand=True, children=[
                         PowerButton(
-                            icon_name="power-duotone",
+                            icon_name="power",
                             label="Shutdown",
                             on_clicked=lambda *_: confirm(
-                                "power-duotone", "Shutdown",
+                                "power", "Shutdown",
                                 lambda: subprocess.Popen(f"{SESSION_MANAGER} poweroff", shell=True),
                                 should_sound=True
                             ),
@@ -184,7 +184,7 @@ class LogoutMenu(QSAppletPage):
         )
         self.restart_button = Button(
             style_classes=["applet-misc-button"],
-            child=Icon(icon_name="arrows-clockwise-duotone"),
+            child=Icon(icon_name="arrows-clockwise"),
             on_clicked=lambda *_: restart_shell(),
         )
         self.restart_button.connect("enter-notify-event", lambda *_: self.hint_revealer.set_reveal_child(True))

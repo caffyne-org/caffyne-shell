@@ -8,14 +8,14 @@ from gi.repository import Gdk
 class QuickSettingsButton(Box):
     VARIANTS=["single", "default", "battery", "battery+percent"]
     def __init__(self, monitor_id, vertical, variant=None, **kwargs):
-        self._record_icon = Icon(icon_name="record-duotone", icon_size=16, visible=False, style_classes=["recording-indicator"])
+        self._record_icon = Icon(icon_name="record", icon_size=16, visible=False, style_classes=["recording-indicator"])
         self._bluetooth_icon = BluetoothIcon(16)
         self._scroll_accumulator = 0.0
 
         inner = Box(
             style_classes=["bar-button"],
             spacing=4,
-            children=[Icon(icon_name="sliders-horizontal-duotone")] if variant == "single" else [
+            children=[Icon(icon_name="sliders-horizontal")] if variant == "single" else [
                 NetworkIcon(16),
                 self._bluetooth_icon,
                 VolumeIcon(16),

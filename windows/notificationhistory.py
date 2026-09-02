@@ -86,12 +86,12 @@ class NotificationHistoryApplet(Applet):
                 children=[
                     Button(
                         style_classes=["applet-misc-button"],
-                        child=Icon(icon_name="bell-slash-duotone" if user_options.settings.dnd else "bell-simple-z-duotone"),
+                        child=Icon(icon_name="bell-slash" if user_options.settings.dnd else "bell-simple-z"),
                         on_clicked=lambda button: self._toggle_dnd(button),
                     ),
                     Button(
                         style_classes=["applet-misc-button"],
-                        child=Icon(icon_name="trash-duotone"),
+                        child=Icon(icon_name="trash"),
                         on_clicked=lambda *_: self.notifications.remove_all(),
                     ),
                 ],
@@ -114,7 +114,7 @@ class NotificationHistoryApplet(Applet):
     def _toggle_dnd(self, button):
         user_options.settings.dnd = not user_options.settings.dnd
         if user_options.settings.dnd:
-            button.get_child().icon_name = "bell-slash-duotone"
+            button.get_child().icon_name = "bell-slash"
         else:
-            button.get_child().icon_name = "bell-simple-z-duotone"
+            button.get_child().icon_name = "bell-simple-z"
         user_options.save()

@@ -7,7 +7,7 @@ from gi.repository import GLib
 class BatteryButton(ProgressButton):
     def __init__(self, monitor_id, vertical, variant=None, **kwargs):
         super().__init__(
-            icon=lambda size: BatteryIcon(size, False) if battery.available else Icon(icon_name="lightning-duotone", icon_size=size),
+            icon=lambda size: BatteryIcon(size, False) if battery.available else Icon(icon_name="lightning", icon_size=size),
             label=f"0%" if battery.available else None,
             variant=variant or "icon+label",
             **kwargs,

@@ -28,7 +28,7 @@ class TimezoneSearchPage(AppletPage):
             style_classes=["launcher-search"],
             spacing=8,
             children=[
-                Icon(icon_name="magnifying-glass-duotone", icon_size=16),
+                Icon(icon_name="magnifying-glass", icon_size=16),
                 self._entry,
             ],
         )
@@ -312,8 +312,8 @@ class WorldClocksWidget(Box):
 
 class StopwatchWidget(Box):
     def __init__(self):
-        self.play_icon = Icon(icon_name="play-duotone")
-        self.lap_reset_icon = Icon(icon_name="clock-clockwise-duotone")
+        self.play_icon = Icon(icon_name="play")
+        self.lap_reset_icon = Icon(icon_name="clock-clockwise")
 
         self.time_label = Label(
             label="00:00.00",
@@ -354,13 +354,13 @@ class StopwatchWidget(Box):
 
     def _update_icons(self):
         if timer.stopwatch_running:
-            self.play_icon.icon_name = "pause-duotone"
-            self.lap_reset_icon.icon_name = "timer-duotone"
+            self.play_icon.icon_name = "pause"
+            self.lap_reset_icon.icon_name = "timer"
         elif timer.stopwatch_time > 0:
-            self.play_icon.icon_name = "play-duotone"
-            self.lap_reset_icon.icon_name = "arrow-counter-clockwise-duotone"
+            self.play_icon.icon_name = "play"
+            self.lap_reset_icon.icon_name = "arrow-counter-clockwise"
         else:
-            self.lap_reset_icon.icon_name = "clock-clockwise-duotone"
+            self.lap_reset_icon.icon_name = "clock-clockwise"
 
 class TimerWidget(Box):
     def __init__(self):
@@ -376,11 +376,11 @@ class TimerWidget(Box):
         )
 
         self.play_stop_icon = Icon(
-            icon_name="stop-duotone" if timer.alarm_set else "play-duotone",
+            icon_name="stop" if timer.alarm_set else "play",
             icon_size=16,
         )
 
-        self.left_icon = Icon(style_classes=["clock-dnd-icon"], icon_name="clock-countdown-duotone", icon_size=16)
+        self.left_icon = Icon(style_classes=["clock-dnd-icon"], icon_name="clock-countdown", icon_size=16)
         self.left_button = Button(
             style_classes=["clock-timer-widget-button"],
             child=self.left_icon,
@@ -421,7 +421,7 @@ class TimerWidget(Box):
         self.alarm_label.set_visible(alarm_set)
         self.timeout_adjuster.minutes_label.set_visible(not alarm_set)
         self.play_stop_icon.set_icon_name(
-            "stop-duotone" if alarm_set else "play-duotone"
+            "stop" if alarm_set else "play"
         )
         self._update_left_icon()
 
@@ -430,13 +430,13 @@ class TimerWidget(Box):
 
     def _update_left_icon(self):
         if timer.alarm_set and timer.do_not_disturb:
-            self.left_icon.set_icon_name("bell-simple-slash-duotone")
+            self.left_icon.set_icon_name("bell-simple-slash")
             self.left_button.add_style_class("active")
         elif timer.alarm_set:
-            self.left_icon.set_icon_name("bell-simple-z-duotone")
+            self.left_icon.set_icon_name("bell-simple-z")
             self.left_button.remove_style_class("active")
         else:
-            self.left_icon.set_icon_name("clock-countdown-duotone")
+            self.left_icon.set_icon_name("clock-countdown")
             self.left_button.remove_style_class("active")
 
 class ClockApplet(Applet):

@@ -1,0 +1,24 @@
+{
+    "display_name": "Caffyne (Default)",
+    "description": "The animations the shell ships with: a scaling applet reveal, a chromatic-split dash reveal, and a tumbling-tile stack transition.",
+    "author": "Caffyne",
+    "applet_reveal": {
+        "shader": "applet_reveal.frag",
+        "open_bezier": [0.17, 0.67, 0.0, 1.0],
+        "close_bezier": [0.16, 1.0, 0.3, 1.0],
+        "open_duration": 0.3,
+        "close_duration": 0.2
+    },
+    "dash_reveal": {
+        "shader": "dash_reveal.frag",
+        "open_bezier": [0.16, 1.0, 0.3, 1.0],
+        "close_bezier": [0.16, 1.0, 0.3, 1.0],
+        "open_duration": 0.3,
+        "close_duration": 0.3
+    },
+    "stack_transition": {
+        "shader": "stack_transition.frag",
+        "bezier": [0.4, 0.0, 0.2, 1.0],
+        "duration": 0.25
+    }
+}

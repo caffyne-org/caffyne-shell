@@ -5,7 +5,7 @@ from services.singletons import night_mode
 class NightModeButton(QSButton):
     def __init__(self):
         super().__init__(
-            icon=Icon(icon_name="moon-duotone"),
+            icon=Icon(icon_name="moon"),
             on_activate=lambda _: self.set_active(True),
             on_deactivate=lambda _: self.set_active(False)
         )

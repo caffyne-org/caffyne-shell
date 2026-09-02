@@ -2,6 +2,7 @@
 @import "colors.css";
 @import "fonts.css";
 
+@import "app.css";
 @import "applet.css";
 @import "bar.css";
 @import "calculator.css";

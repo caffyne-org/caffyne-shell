@@ -40,8 +40,8 @@ class SystemModule(Box):
 
 class DesktopSystem(Box):
     def __init__(self):
-        self.cpu_module = SystemModule(icon_name="cpu-duotone")
-        self.ram_module = SystemModule(icon_name="memory-duotone")
+        self.cpu_module = SystemModule(icon_name="cpu")
+        self.ram_module = SystemModule(icon_name="memory")
         super().__init__(
             spacing=18,
             orientation="v",

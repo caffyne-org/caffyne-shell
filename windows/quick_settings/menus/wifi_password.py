@@ -14,25 +14,25 @@ class PasswordState(Enum):
 
 STATE_CONFIG = {
     PasswordState.IDLE: {
-        "icon": "shield-warning-duotone",
+        "icon": "shield-warning",
         "status": "Protected Network",
         "button": "Connect",
         "sensitive": True,
     },
     PasswordState.CONNECTING: {
-        "icon": "shield-warning-duotone",
+        "icon": "shield-warning",
         "status": "Connecting…",
         "button": "Connecting…",
         "sensitive": False,
     },
     PasswordState.CONNECTED: {
-        "icon": "shield-check-duotone",
+        "icon": "shield-check",
         "status": "Connected!",
         "button": "Connected",
         "sensitive": False,
     },
     PasswordState.ERROR: {
-        "icon": "shield-warning-duotone",
+        "icon": "shield-warning",
         "status": "Error",
         "button": "Try Again",
         "sensitive": True,
@@ -52,7 +52,7 @@ class WifiPasswordMenu(QSAppletPage):
             style_classes=["menu-section-title"],
             line_wrap="word",
         )
-        self._shield = Icon(icon_name="shield-warning-duotone", icon_size=50)
+        self._shield = Icon(icon_name="shield-warning", icon_size=50)
         self._entry = Entry(
             placeholder_text="Password",
             password=True,
@@ -60,7 +60,7 @@ class WifiPasswordMenu(QSAppletPage):
             h_expand=True,
         )
         self._show_toggle = Button(
-            child=Icon(icon_name="eye-duotone", icon_size=16),
+            child=Icon(icon_name="eye", icon_size=16),
             style_classes=["icon-button"],
             on_clicked=lambda *_: self._toggle_visibility(),
         )

@@ -6,19 +6,19 @@ from services.singletons import power_profiles
 class PowerModes(Box):
     def __init__(self, wide=False, **kwargs):
         self.saver_btn = QSButton(
-            icon=Icon(icon_name="leaf-duotone", icon_size=16),
+            icon=Icon(icon_name="leaf", icon_size=16),
             on_activate=lambda _: power_profiles.set_active_profile("power-saver"),
             style_classes=["qs-power-profile-button", "wide"] if wide else ["qs-power-profile-button"],
             h_align="center",
         )
         self.balanced_btn = QSButton(
-            icon=Icon(icon_name="scales-duotone", icon_size=16),
+            icon=Icon(icon_name="scales", icon_size=16),
             on_activate=lambda _: power_profiles.set_active_profile("balanced"),
             style_classes=["qs-power-profile-button", "wide"] if wide else ["qs-power-profile-button"],
             h_align="center",
         )
         self.performance_btn = QSButton(
-            icon=Icon(icon_name="speedometer-duotone", icon_size=16),
+            icon=Icon(icon_name="speedometer", icon_size=16),
             on_activate=lambda _: power_profiles.set_active_profile("performance"),
             style_classes=["qs-power-profile-button", "wide"] if wide else ["qs-power-profile-button"],
             h_align="center",

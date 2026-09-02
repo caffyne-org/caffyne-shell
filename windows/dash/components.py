@@ -4,16 +4,16 @@ from fabric.widgets.button import Button
 from fabric.widgets.label import Label
 from fabric.widgets.grid import Grid
 from snippets import Icon, HackedStack, ClippingScrolledWindow, StyleAwareEntry
-
 class DashHeader(CenterBox):
-    def __init__(self):
+    def __init__(self, dash):
+        self.dash = dash
         self._entry = StyleAwareEntry(h_expand=True, h_align="fill", placeholder="Type to search...")
         self._entry_box = Box(
             style_classes=["launcher-search"],
             spacing=8,
             visible=False,
             children=[
-                Icon(icon_name="magnifying-glass-duotone", icon_size=16),
+                Icon(icon_name="magnifying-glass", icon_size=16),
                 self._entry,
             ],
         )
@@ -37,11 +37,8 @@ class DashHeader(CenterBox):
         peer_icon: str,
         peer_label: str,
         peer_h_callback,
-        v_icon: str,
-        v_callback,
         show_search: bool = False,
         current_on_left: bool = True,
-        h_switcher_on_right: bool = False,
     ):
         for child in self._left_box.get_children():
             self._left_box.remove(child)
@@ -65,44 +62,30 @@ class DashHeader(CenterBox):
             on_pressed=lambda _: peer_h_callback(),
         )
 
-        if h_switcher_on_right:
-
-            v_btn = Button(
-                style_classes=["dash-header-button"],
-                child=Icon(icon_name=v_icon),
-                on_pressed=lambda _: v_callback(),
-            )
-            self._left_box.add(v_btn)
-            self._left_box.show_all()
-
-            if current_on_left:
-                self._right_box.add(current_btn)
-                self._right_box.add(peer_btn)
-            else:
-                self._right_box.add(peer_btn)
-                self._right_box.add(current_btn)
-            self._right_box.show_all()
+        if current_on_left:
+            self._left_box.add(current_btn)
+            self._left_box.add(peer_btn)
         else:
+            self._left_box.add(peer_btn)
+            self._left_box.add(current_btn)
+        self._left_box.show_all()
 
-            if current_on_left:
-                self._left_box.add(current_btn)
-                self._left_box.add(peer_btn)
-            else:
-                self._left_box.add(peer_btn)
-                self._left_box.add(current_btn)
-            self._left_box.show_all()
-
-            v_btn = Button(
+        self._right_box.add(
+            Button(
                 style_classes=["dash-header-button"],
-                child=Icon(icon_name=v_icon),
-                on_pressed=lambda _: v_callback(),
+                child=Icon(icon_name="nut"),
+                on_pressed=lambda *_: self.show_settings(),
             )
-            self._right_box.add(v_btn)
-            self._right_box.show_all()
+        )
+        self._right_box.show_all()
 
         self._entry_box.set_visible(show_search)
         if not show_search:
             self._entry.set_text("")
+    def show_settings(self):
+        from services.singletons import settings
+        settings.show()
+        self.dash.toggle()
 
 class DashGrid(Grid):
     def __init__(self, children):

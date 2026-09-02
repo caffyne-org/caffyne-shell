@@ -6,12 +6,9 @@ from fabric.core.service import Property
 from utils.svg import get_svg_path
 gi.require_version("Rsvg", "2.0")
 from gi.repository import Rsvg
+from user_options import user_options
 
 class Svg(FabricSvg):
-    """
-    Adds dynamic `color` support sourced from `Gtk.StyleContext`.
-    """
-
     def do_draw(self, cr: cairo.Context):
         if not self._handle:
             return
@@ -52,13 +49,24 @@ class Svg(FabricSvg):
 class Icon(Svg):
     def __init__(self, icon_name, icon_size=16, *args, **kwargs):
         self._icon_name = icon_name
+        self._current_pack = None
         super().__init__(
             name="icon",
-            svg_file=get_svg_path(icon_name),
+            svg_file=get_svg_path(icon_name, user_options.theme.icon_pack),
             size=icon_size,
             *args,
             **kwargs
         )
+        self.connect("realize", self._on_realize)
+
+    def _on_realize(self, _):
+        from services.singletons import icon_pack
+        self._current_pack = icon_pack.active_pack
+        icon_pack.connect("pack-changed", self._on_pack_changed)
+
+    def _on_pack_changed(self, _, pack):
+        self._current_pack = pack
+        self.set_from_file(get_svg_path(self._icon_name, pack))
 
     @Property(str, "read-write", default_value="")
     def icon_name(self) -> str:
@@ -67,7 +75,7 @@ class Icon(Svg):
     @icon_name.setter
     def icon_name(self, value: str):
         self._icon_name = value
-        self.set_from_file(get_svg_path(value))
+        self.set_from_file(get_svg_path(value, self._current_pack))
 
     def do_finalize_handle(self):
         if not self._handle:

@@ -10,12 +10,12 @@ from fabric.widgets.wayland import WaylandWindow
 from fabric.widgets.box import Box
 from fabric.widgets.overlay import Overlay
 from loguru import logger
-
+from services.singletons import plugins
 from user_options import user_options
 from utils.helpers import popup_with_blur
 from desktop_applets import DESKTOP_APPLET_SIZES, DESKTOP_APPLET_WIDGETS, DESKTOP_CANVAS_SIZES
-from .themes import wallpaper
-from snippets import Animator, disable_blur, free_blur, set_blur_regions_from_widget, enable_blur, trace_widget_regions
+from .themes import wp
+from snippets import Animator, disable_blur, free_blur, set_blur_regions_from_widget, enable_blur, trace_widget, wl_surface_id
 from snippets.blur.blur import set_blur_regions
 
 CELL      = 81
@@ -218,6 +218,11 @@ class DesktopAppletWindow(WaylandWindow):
         self._ready              = False
         self._in_size_allocate   = False
         self._blur_ctx = None
+        self._blur_surface = 0
+        self._retrace_source: int | None = None
+        self._retrace_retries = 0
+        self._style_service = None
+        self._style_handler: int | None = None
 
         self._canvas_active  = False
         self._dragging_key: str | None = None
@@ -342,39 +347,131 @@ class DesktopAppletWindow(WaylandWindow):
         self._fade_in()
         return False
     
+    # -- blur ---------------------------------------------------------------
+    #
+    # A BlurContext stores the wl_surface it was created with and commits that
+    # surface on every call, and this window drops and rebuilds its surface on
+    # every grid recalculation -- _do_window_resize() hides and shows it to
+    # force a fresh allocation. So a context is never valid for the lifetime of
+    # the window: each retrace compares the surface its context holds against
+    # the one the window has now, and rebuilds when they differ. Committing the
+    # stale one segfaults inside libwayland.
+
+    RETRACE_RETRY_MS    = 150
+    RETRACE_MAX_RETRIES = 20
+
     def _apply_blur(self) -> None:
         if not user_options.theme.blur:
             return
-        from .singletons import style_service
 
-        style_service.connect("notify::style-changed", self._retrace_blur)
+        if self._style_handler is None:
+            from .singletons import style_service
 
-        self._blur_ctx = enable_blur(self)
-        if not self._blur_ctx:
+            self._style_service = style_service
+            # A "notify::" handler is invoked with (object, pspec), which
+            # _retrace_blur takes neither of: connected directly it raised on
+            # every style change instead of retracing.
+            self._style_handler = style_service.connect(
+                "notify::style-changed", lambda *_: self.schedule_retrace_blur()
+            )
+
+        self.schedule_retrace_blur()
+
+    def schedule_retrace_blur(self) -> None:
+        """Coalesce retrace requests into a single pass on the next idle.
+
+        Repositioning, adding, removing and dropping an applet each ask for a
+        retrace, and a grid recalculation does all of them in a row. Tracing
+        every applet offscreen is not cheap enough to run once per request.
+        """
+        if self._retrace_source is not None:
             return
+        self._retrace_retries = 0
+        self._retrace_source  = GLib.idle_add(self._on_retrace_source)
 
+    def _on_retrace_source(self) -> bool:
+        self._retrace_source = None
         self._retrace_blur()
+        return False
+
+    def _retry_retrace_blur(self) -> None:
+        """Come back once the window has been mapped again.
+
+        A recalculation hides the window, and the retrace it schedules on the
+        way out can land before GTK has finished remapping it and handing it a
+        new wl_surface. Without a retry the applets would simply lose their
+        blur until something else happened to ask for one.
+        """
+        if self._retrace_source is not None:
+            return
+        if self._retrace_retries >= self.RETRACE_MAX_RETRIES:
+            return
+        self._retrace_retries += 1
+        self._retrace_source = GLib.timeout_add(
+            self.RETRACE_RETRY_MS, self._on_retrace_source
+        )
+
+    def _teardown_blur_ctx(self) -> None:
+        """Release the context, committing only a surface that is still live.
+
+        blur_disable() commits the surface the context was built with, so it is
+        safe only while that surface is still the window's. blur_free() touches
+        nothing but its own allocation and is safe either way.
+        """
+        ctx, surface       = self._blur_ctx, self._blur_surface
+        self._blur_ctx     = None
+        self._blur_surface = 0
+        if ctx is None:
+            return
+        if surface and surface == wl_surface_id(self):
+            disable_blur(ctx)
+        free_blur(ctx)
 
     def _retrace_blur(self) -> None:
-        if not self._blur_ctx:
+        if not user_options.theme.blur:
+            self._teardown_blur_ctx()
             return
 
+        surface = wl_surface_id(self)
+        if not surface:
+            # Unmapped, or partway through the hide/show of a recalculation.
+            # Every libblur entry point commits the surface, so there is
+            # nothing safe to do until the window owns one again.
+            self._teardown_blur_ctx()
+            self._retry_retrace_blur()
+            return
+
+        if self._blur_ctx is None or surface != self._blur_surface:
+            self._teardown_blur_ctx()
+            self._blur_ctx = enable_blur(self)
+            if not self._blur_ctx:
+                return
+            self._blur_surface = surface
+
         rects = []
-        for key, eb in self._children.items():
-            if not eb.get_visible():
+        for eb in self._children.values():
+            # get_mapped() rather than get_visible(): a widget hidden by its
+            # parent, or by the drag that is about to move it, still reports
+            # itself visible, and tracing one draws it into the scratch surface
+            # at whatever stale allocation it last had.
+            if not eb.get_mapped():
+                continue
+            alloc = eb.get_allocation()
+            if alloc.width <= 0 or alloc.height <= 0:
                 continue
             coords = eb.translate_coordinates(self, 0, 0)
             if not coords:
                 continue
             cx, cy = coords
-            traced = trace_widget_regions(eb, accuracy=1, erode=0)
-            for r in traced:
+            for r in trace_widget(eb):
                 rects.append((cx + r.x, cy + r.y, r.width, r.height))
 
         if not rects:
+            # Clear the region but keep the context. The applets are only
+            # hidden -- mid-drag, or between a rebuild and its reposition --
+            # and freeing here left nothing to restore the blur when they came
+            # back.
             disable_blur(self._blur_ctx)
-            free_blur(self._blur_ctx)
-            self._blur_ctx = None
             return
 
         set_blur_regions(self._blur_ctx, rects)
@@ -588,7 +685,7 @@ class DesktopAppletWindow(WaylandWindow):
                 continue
             px, py = _grid_to_pixel(grid_x, grid_y)
             self._fixed.move(widget, self._pad_x + px, self._pad_y + py)
-        GLib.idle_add(self._retrace_blur)
+        self.schedule_retrace_blur()
 
     @property
     def cols(self) -> int:
@@ -655,9 +752,8 @@ class DesktopAppletWindow(WaylandWindow):
             self._children[key] = eb
             self._reposition_all()
 
-            if not self._blur_ctx and user_options.theme.blur:
-                self._apply_blur()
-                    
+            self.schedule_retrace_blur()
+
         except Exception as e:
             logger.error(f"[DesktopAppletService] failed to build {key!r}: {e}")
 
@@ -666,7 +762,7 @@ class DesktopAppletWindow(WaylandWindow):
         if widget:
             self._fixed.remove(widget)
             widget.destroy()
-            GLib.idle_add(self._retrace_blur)
+            self.schedule_retrace_blur()
 
     def _setup_applet_drag(self, eb: Gtk.EventBox, key: str) -> None:
         eb.drag_source_set(
@@ -700,14 +796,14 @@ class DesktopAppletWindow(WaylandWindow):
             eb.show()
             if self._canvas_active and self._dragging_key == key:
                 self.exit_canvas_mode(restore=False)
-        GLib.idle_add(self._retrace_blur)
+        self.schedule_retrace_blur()
 
 
     def _on_applet_drag_failed(self, eb, ctx, result, key: str) -> bool:
         eb.show()
         if self._canvas_active and self._dragging_key == key:
             self.exit_canvas_mode(restore=False)
-            GLib.idle_add(self._retrace_blur)
+            self.schedule_retrace_blur()
         return True
 
     def _on_applet_right_click(self, eb, event: Gdk.EventButton, key: str) -> bool:
@@ -810,14 +906,20 @@ class DesktopAppletWindow(WaylandWindow):
                 nx = max(0.0, min(1.0, nx))
                 ny = max(0.0, min(1.0, ny))
                 logger.info(f"Drop on monitor {self._monitor_id}: {path!r} at ({nx:.3f}, {ny:.3f})")
-                wallpaper.set_wallpaper(path, pos=(nx, ny))
+                wp.set_wallpaper(path, pos=(nx, ny))
         ctx.finish(True, False, time)
         
     def destroy(self) -> None:
-        if self._blur_ctx:
-            disable_blur(self._blur_ctx)
-            free_blur(self._blur_ctx)
-            self._blur_ctx = None
+        # A pending retrace outlives the window otherwise, and traces children
+        # that super().destroy() has already torn down.
+        if self._retrace_source is not None:
+            GLib.source_remove(self._retrace_source)
+            self._retrace_source = None
+        if self._style_handler is not None:
+            self._style_service.disconnect(self._style_handler)
+            self._style_handler = None
+            self._style_service = None
+        self._teardown_blur_ctx()
         super().destroy()
 
 class DesktopAppletService(Service):
@@ -847,6 +949,7 @@ class DesktopAppletService(Service):
         self._sync_monitors()
         for win in self._windows.values():
             win.rebuild()
+        plugins.connect("plugin-disabled", self._on_plugin_disabled)
 
         if user_options.theme.blur:
             GLib.timeout_add(2000, self._initial_blur)
@@ -885,15 +988,22 @@ class DesktopAppletService(Service):
         logger.info("[DesktopAppletService] monitor removed, resyncing...")
         self._sync_monitors()
 
+    def _on_plugin_disabled(self, _, name: str) -> None:
+        display = Gdk.Display.get_default()
+        for monitor_id in range(display.get_n_monitors()):
+            if user_options.desktop_canvas.is_placed(monitor_id, name):
+                self.remove(monitor_id, name)
+            # Also clean up legacy desktop_applets
+            if user_options.desktop_applets.is_placed(name):
+                user_options.desktop_applets.remove(name)
+        user_options.save()
+        
     def apply_blur(self, enabled: bool) -> None:
         for win in self._windows.values():
             if enabled:
                 win._apply_blur()
             else:
-                if win._blur_ctx:
-                    disable_blur(win._blur_ctx)
-                    free_blur(win._blur_ctx)
-                    win._blur_ctx = None
+                win._teardown_blur_ctx()
 
     def place(self, monitor_id: int, key: str, grid_x: int, grid_y: int) -> bool:
         win  = self._windows.get(monitor_id)

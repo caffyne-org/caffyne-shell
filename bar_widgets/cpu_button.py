@@ -9,7 +9,7 @@ class CPUIndicatorButton(ProgressButton):
     """Circular variant — scale with icon inside + optional percent label."""
     def __init__(self, monitor_id, vertical, variant=None, **kwargs):
         super().__init__(
-            icon=lambda size: Icon(icon_name="cpu-duotone", icon_size=size),
+            icon=lambda size: Icon(icon_name="cpu", icon_size=size),
             label="0%",
             variant=variant or "icon+label",
             **kwargs,

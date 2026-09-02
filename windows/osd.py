@@ -4,23 +4,20 @@ from fabric.widgets.label import Label
 from fabric.widgets.eventbox import EventBox
 from fabric.widgets.button import Button
 from icons import VolumeIcon
-from snippets import Icon, AnimatedScale, DashReveal, enable_blur, disable_blur, free_blur, trace_widget_regions
+from snippets import Icon, AnimatedScale, DashReveal, BlurBox
 from services.singletons import audio, brightness, wm, timer, battery
 from gi.repository import GLib, Gdk
 from user_options import user_options
 from utils.monitors import get_connector_from_monitor_id
 REVEAL_DURATION = 300
-import math
-from snippets.blur.region_trace import trace_widget_regions
-from snippets.blur.blur import set_blur_regions
 # from snippets.dashreveal import _ease_out_expo
 from utils.update_checker import check_for_updates, do_pull, restart_shell
 from utils.sounds import play_sound
 
 # POWER_PROFILE_ICONS = {
-#     "power-saver": "leaf-duotone",
-#     "balanced": "scales-duotone",
-#     "performance": "speedometer-duotone",
+#     "power-saver": "leaf",
+#     "balanced": "scales",
+#     "performance": "speedometer",
 # }
 
 # POWER_PROFILE_LABELS = {
@@ -36,7 +33,7 @@ class OSDUpdate(Box):
     def __init__(self, on_dismiss=None, **kwargs):
         self._commits_behind = 0
         self._on_dismiss_cb = on_dismiss
-        self._icon = Icon(icon_name="shooting-star-duotone", icon_size=32)
+        self._icon = Icon(icon_name="shooting-star", icon_size=32)
  
         self._title = Label(
             label="Update Available",
@@ -98,27 +95,27 @@ class OSDUpdate(Box):
  
     def _set_state_available(self):
         n = self._commits_behind
-        self._icon.set_property("icon-name", "shooting-star-duotone")
+        self._icon.set_property("icon-name", "shooting-star")
         self._title.set_label("Update Available")
         self._subtitle.set_label(f"· {n} new commit{'s' if n != 1 else ''}")
         self._set_buttons("Update", "Later")
         self._actions.set_visible(True)
  
     def _set_state_updating(self):
-        self._icon.set_property("icon-name", "arrows-clockwise-duotone")
+        self._icon.set_property("icon-name", "arrows-clockwise")
         self._title.set_label("Updating…")
         self._subtitle.set_label("Pulling from origin")
         self._actions.set_visible(False)
  
     def _set_state_restart(self):
-        self._icon.set_property("icon-name", "check-circle-duotone")
+        self._icon.set_property("icon-name", "check-circle")
         self._title.set_label("Shell Updated!")
         self._subtitle.set_label("Restart to apply changes")
         self._set_buttons("Restart", "Later")
         self._actions.set_visible(True)
  
     def _set_state_failed(self, error: str):
-        self._icon.set_property("icon-name", "warning-circle-duotone")
+        self._icon.set_property("icon-name", "warning-circle")
         self._title.set_label("Update Failed")
         self._subtitle.set_label(error[:60] + "…" if len(error) > 60 else error)
         self._set_buttons("Retry", "Dismiss")
@@ -217,7 +214,6 @@ class OSD(WaylandWindow):
         self._bound_speaker = None
         self._speaker_volume_handler = None
         self._speaker_muted_handler = None
-        self._blur_ctx = None
         self._saved_brightness = 0
         self._battery_state = None
         self._monitor_connector = get_connector_from_monitor_id(monitor)
@@ -255,18 +251,18 @@ class OSD(WaylandWindow):
         )
         self.brightness_bar = OSDBar(
             label_text="Brightness",
-            icon_name="seal-duotone",
+            icon_name="seal",
             on_button_click=lambda *_: self._handle_brightness_click(),
         )
 
-        self.layout_icon = OSDIcon(icon_name="keyboard-duotone", label_text="")
-        # self.power_icon = OSDIcon(icon_name="leaf-duotone", label_text="")
-        self.alarm_icon = OSDIcon(icon_name="alarm-duotone", label_text="Alarm!")
+        self.layout_icon = OSDIcon(icon_name="keyboard", label_text="")
+        # self.power_icon = OSDIcon(icon_name="leaf", label_text="")
+        self.alarm_icon = OSDIcon(icon_name="alarm", label_text="Alarm!")
         self.update_widget = OSDUpdate(on_dismiss=self._start_hide)
 
-        self.battery_icon = OSDIcon(icon_name="battery-charging-duotone", label_text="Charging")
-        self.battery_low_icon = OSDIcon(icon_name="battery-low-duotone", label_text="Low Battery")
-        self.battery_critical_icon = OSDIcon(icon_name="battery-warning-duotone", label_text="Critical!")
+        self.battery_icon = OSDIcon(icon_name="battery-charging", label_text="Charging")
+        self.battery_low_icon = OSDIcon(icon_name="battery-low", label_text="Low Battery")
+        self.battery_critical_icon = OSDIcon(icon_name="battery-warning", label_text="Critical!")
 
         self.revealer = DashReveal(
             open_duration=0.15,
@@ -290,10 +286,19 @@ class OSD(WaylandWindow):
             ]),
         )
 
+        # The OSD reveal runs a shader from whichever animation pack is
+        # active, so the blur region is traced from its frames rather than
+        # recomputed from the built-in scale.
+        self.blur = BlurBox(
+            child=self.revealer,
+            reveal=self.revealer,
+            enabled=user_options.theme.blur,
+        )
+
         self.stack_box = EventBox(
             h_expand=True,
             h_align="fill",
-            child=self.revealer,
+            child=self.blur,
         )
 
         super().__init__(
@@ -410,10 +415,9 @@ class OSD(WaylandWindow):
                 child.set_visible(child is widget)
 
             if not self.is_visible():
+                self.blur.enabled = user_options.theme.blur
                 self.set_visible(True)
                 self.revealer.open()
-                if user_options.theme.blur:
-                    GLib.timeout_add(10, self._apply_blur)
 
             self._reset_timer()
 
@@ -461,68 +465,9 @@ class OSD(WaylandWindow):
 
         self._last_charging = charging
 
-    def _apply_blur(self):
-        if self._blur_ctx:
-            disable_blur(self._blur_ctx)
-            free_blur(self._blur_ctx)
-            self._blur_ctx = None
-        
-        self._blur_ctx = enable_blur(self)
-        target_widget = self.revealer.children[0]
-
-        def on_progress(value):
-            if not self._blur_ctx:
-                return
-            
-            coords = target_widget.translate_coordinates(self, 0, 0)
-            if not coords:
-                return
-            cx, cy = coords
-            
-            alloc = target_widget.get_allocation()
-            if alloc.width <= 1 or alloc.height <= 1:
-                return
-
-            # retrace every time so regions are always based on current allocation
-            traced = trace_widget_regions(target_widget, accuracy=1, erode=2)
-            if not traced:
-                return
-
-            scale = DashReveal.SCALE_START + (1.0 - DashReveal.SCALE_START) * value
-
-            if value < 0.05:
-                set_blur_regions(self._blur_ctx, [])
-                return
-
-            anchor_x = cx + alloc.width / 2.0
-            anchor_y = cy + alloc.height / 2.0
-
-            clipped = []
-            for r in traced:
-                x1 = anchor_x + (cx + r.x - anchor_x) * scale
-                y1 = anchor_y + (cy + r.y - anchor_y) * scale
-                x2 = anchor_x + (cx + r.x + r.width - anchor_x) * scale
-                y2 = anchor_y + (cy + r.y + r.height - anchor_y) * scale
-
-                clipped.append((
-                    math.floor(x1),
-                    math.floor(y1),
-                    max(1, math.ceil(x2 - x1)),
-                    max(1, math.ceil(y2 - y1))
-                ))
-
-            set_blur_regions(self._blur_ctx, clipped)
-
-        self.revealer.progress_cb = on_progress
-        return False
-
     def _start_hide(self):
         self.revealer.progress_cb = None
         self.revealer.close(on_done=self._hide)
-        if self._blur_ctx:
-            disable_blur(self._blur_ctx)
-            free_blur(self._blur_ctx)
-            self._blur_ctx = None
         self._hide_timer = None
         return False
 
@@ -565,6 +510,6 @@ class OSD(WaylandWindow):
     
     # def _on_power_profile_changed(self):
     #     profile = power_profiles.active_profile
-    #     self.power_icon.set_icon(POWER_PROFILE_ICONS.get(profile, "leaf-duotone"))
+    #     self.power_icon.set_icon(POWER_PROFILE_ICONS.get(profile, "leaf"))
     #     self.power_icon.set_label(POWER_PROFILE_LABELS.get(profile, profile))
     #     self._show_only(self.power_icon)

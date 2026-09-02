@@ -12,6 +12,7 @@ from .components import DashPage
 from desktop_applets import DESKTOP_APPLET_SIZES, DESKTOP_APPLET_WIDGETS
 from gi.repository import Gdk, Gtk, GLib
 from user_options import user_options
+from services.singletons import plugins
 import threading
 
 COLUMNS = 6
@@ -443,7 +444,13 @@ class DashLauncherPage(DashPage):
         self.connect("realize", self._on_realise)
         self._load_placed_applets()
         self._rebuild()
+        plugins.connect("plugin-disabled", self._on_plugin_disabled)
 
+    def _on_plugin_disabled(self, _, name: str) -> None:
+        # Remove from placed items if it was dragged into the launcher grid
+        if any(i.key == name for i in self._placed_items):
+            self._remove_applet(name)
+            
     def _load_placed_applets(self) -> None:
         entries = user_options.desktop_applets.get_applets()
         items = []

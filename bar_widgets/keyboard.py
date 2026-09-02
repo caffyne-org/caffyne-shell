@@ -5,7 +5,7 @@ from services.singletons import wm
 class KeyboardButton(BaseButton):
     def __init__(self, monitor_id, vertical, variant=None, **kwargs):
         super().__init__(
-            icon=Icon(icon_name="keyboard-duotone", icon_size=16),
+            icon=Icon(icon_name="keyboard", icon_size=16),
             label="",
             variant=variant or "icon+label",
             **kwargs,

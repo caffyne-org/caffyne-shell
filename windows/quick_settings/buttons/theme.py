@@ -7,7 +7,7 @@ class DarkModeButton(QSButton):
     def __init__(self):
         super().__init__(
             icon = Icon(
-                icon_name="drop-half-bottom-duotone",
+                icon_name="drop-half-bottom",
                 pixel_size=16
             ),
             label = Label(

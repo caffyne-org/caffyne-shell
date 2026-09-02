@@ -10,7 +10,7 @@ class AirplaneModeButton(QSButton):
         self.bluetooth_state: bool = False
 
         super().__init__(
-            icon=Icon(icon_name="airplane-duotone", icon_size=16),
+            icon=Icon(icon_name="airplane", icon_size=16),
             label=Label(label="Airplane Mode"),
             on_activate=lambda _: self._activate(),
             on_deactivate=lambda _: self._deactivate(),

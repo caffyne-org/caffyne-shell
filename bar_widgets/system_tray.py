@@ -79,7 +79,7 @@ class SystemTray(Box):
             h_align="center",
             h_expand=True,
             children=[
-                Icon(icon_name="dots-three-circle-duotone"),
+                Icon(icon_name="dots-three-circle"),
                 Label(label="Tray"),
             ],
         )

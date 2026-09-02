@@ -19,34 +19,34 @@ IP_LOCATION_API = "http://ip-api.com/json/"
 WEATHER_API_BASE = "https://api.open-meteo.com/v1/forecast"
 
 WEATHER_DATA: Dict[int, Tuple[str, str, str]] = {
-    0:  ("☀️",  "sun-duotone",           "Clear sky"),
-    1:  ("🌤️", "cloud-sun-duotone",      "Mainly clear"),
-    2:  ("⛅",  "cloud-sun-duotone",      "Partly cloudy"),
-    3:  ("☁️",  "cloud-duotone",          "Overcast"),
-    45: ("🌫️", "cloud-fog-duotone",      "Fog"),
-    48: ("🌫️", "cloud-fog-duotone",      "Depositing rime fog"),
-    51: ("🌦️", "cloud-rain-duotone",     "Light drizzle"),
-    53: ("🌦️", "cloud-rain-duotone",     "Moderate drizzle"),
-    55: ("🌧️", "cloud-rain-duotone",     "Dense drizzle"),
-    56: ("🌨️", "cloud-rain-duotone",     "Light freezing drizzle"),
-    57: ("🌨️", "cloud-rain-duotone",     "Dense freezing drizzle"),
-    61: ("🌦️", "cloud-rain-duotone",     "Slight rain"),
-    63: ("🌧️", "cloud-rain-duotone",     "Moderate rain"),
-    65: ("🌧️", "cloud-rain-duotone",     "Heavy rain"),
-    66: ("🌨️", "cloud-rain-duotone",     "Light freezing rain"),
-    67: ("🌨️", "cloud-rain-duotone",     "Heavy freezing rain"),
-    71: ("❄️",  "cloud-snow-duotone",     "Slight snow"),
-    73: ("🌨️", "cloud-snow-duotone",     "Moderate snow"),
-    75: ("❄️",  "cloud-snow-duotone",     "Heavy snow"),
-    77: ("❄️",  "cloud-snow-duotone",     "Snow grains"),
-    80: ("🌦️", "cloud-rain-duotone",     "Slight rain showers"),
-    81: ("🌧️", "cloud-rain-duotone",     "Moderate rain showers"),
-    82: ("⛈️",  "cloud-lightning-duotone","Violent rain showers"),
-    85: ("🌨️", "cloud-snow-duotone",     "Slight snow showers"),
-    86: ("❄️",  "cloud-snow-duotone",     "Heavy snow showers"),
-    95: ("⛈️",  "cloud-lightning-duotone","Thunderstorm"),
-    96: ("⛈️",  "cloud-lightning-duotone","Thunderstorm with hail"),
-    99: ("⛈️",  "cloud-lightning-duotone","Thunderstorm with heavy hail"),
+    0:  ("☀️",  "sun",           "Clear sky"),
+    1:  ("🌤️", "cloud-sun",      "Mainly clear"),
+    2:  ("⛅",  "cloud-sun",      "Partly cloudy"),
+    3:  ("☁️",  "cloud",          "Overcast"),
+    45: ("🌫️", "cloud-fog",      "Fog"),
+    48: ("🌫️", "cloud-fog",      "Depositing rime fog"),
+    51: ("🌦️", "cloud-rain",     "Light drizzle"),
+    53: ("🌦️", "cloud-rain",     "Moderate drizzle"),
+    55: ("🌧️", "cloud-rain",     "Dense drizzle"),
+    56: ("🌨️", "cloud-rain",     "Light freezing drizzle"),
+    57: ("🌨️", "cloud-rain",     "Dense freezing drizzle"),
+    61: ("🌦️", "cloud-rain",     "Slight rain"),
+    63: ("🌧️", "cloud-rain",     "Moderate rain"),
+    65: ("🌧️", "cloud-rain",     "Heavy rain"),
+    66: ("🌨️", "cloud-rain",     "Light freezing rain"),
+    67: ("🌨️", "cloud-rain",     "Heavy freezing rain"),
+    71: ("❄️",  "cloud-snow",     "Slight snow"),
+    73: ("🌨️", "cloud-snow",     "Moderate snow"),
+    75: ("❄️",  "cloud-snow",     "Heavy snow"),
+    77: ("❄️",  "cloud-snow",     "Snow grains"),
+    80: ("🌦️", "cloud-rain",     "Slight rain showers"),
+    81: ("🌧️", "cloud-rain",     "Moderate rain showers"),
+    82: ("⛈️",  "cloud-lightning","Violent rain showers"),
+    85: ("🌨️", "cloud-snow",     "Slight snow showers"),
+    86: ("❄️",  "cloud-snow",     "Heavy snow showers"),
+    95: ("⛈️",  "cloud-lightning","Thunderstorm"),
+    96: ("⛈️",  "cloud-lightning","Thunderstorm with hail"),
+    99: ("⛈️",  "cloud-lightning","Thunderstorm with heavy hail"),
 }
 
 class Cache:
@@ -151,7 +151,7 @@ class Weather(Service):
     def weather_emoji(self) -> str:
         return self._property_helper_weather_emoji
 
-    @Property(str, "readable", default_value="cloud-sun-duotone")
+    @Property(str, "readable", default_value="cloud-sun")
     def weather_icon(self) -> str:
         return self._property_helper_weather_icon
 
@@ -194,7 +194,7 @@ class Weather(Service):
         self._property_helper_precipitation = 0.0
         self._property_helper_weather_code = 0
         self._property_helper_weather_emoji = "🌡️"
-        self._property_helper_weather_icon = "cloud-sun-duotone"
+        self._property_helper_weather_icon = "cloud-sun"
         self._property_helper_weather_description = "Unknown"
         self._property_helper_location = "Loading..."
         self._property_helper_is_loading = True

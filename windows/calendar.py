@@ -132,12 +132,12 @@ class CalendarWidget(Box):
             end_children=Box(spacing=12, children=[
                 Button(
                     style_classes=["applet-misc-button"],
-                    child=Icon(icon_name="arrow-left-duotone"),
+                    child=Icon(icon_name="arrow-left"),
                     on_clicked=lambda *_: self._change_month(-1),
                 ),
                 Button(
                     style_classes=["applet-misc-button"],
-                    child=Icon(icon_name="arrow-right-duotone"),
+                    child=Icon(icon_name="arrow-right"),
                     on_clicked=lambda *_: self._change_month(1),
                 ),
             ])

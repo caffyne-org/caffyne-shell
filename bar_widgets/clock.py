@@ -6,7 +6,7 @@ from snippets import Icon
 class ClockButton(BaseButton):
     def __init__(self, monitor_id, vertical, variant=None, **kwargs):
         super().__init__(
-            icon=Icon(icon_name="clock-duotone", icon_size=16),
+            icon=Icon(icon_name="clock", icon_size=16),
             label=self._get_label(),
             variant=variant or "icon+label",
             **kwargs,

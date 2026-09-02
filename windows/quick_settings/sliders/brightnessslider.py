@@ -8,7 +8,7 @@ class BrightnessSlider(SliderBox):
         self.scale = None
 
         super().__init__(
-            left_icon=Icon(icon_name="seal-duotone", icon_size=16),
+            left_icon=Icon(icon_name="seal", icon_size=16),
             on_left_click=lambda *_: self._handle_brightness_click(),
             scale_min=1,
             scale_max=100,

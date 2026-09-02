@@ -11,15 +11,17 @@ from .player import PlayerManager
 from .network import NetworkClient
 from .weather import Weather
 from .idle import SwayidleService
+from .icon_pack import IconPackService
 from .timer import TimerService
 from .processes import ProcessMonitorService
-from .themes import ThemeService
+from .plugin import PluginService
+from .themes import ThemePackService
 from .night_mode import NightModeService
 from .recorder import RecorderService
 from .bluetooth import BluetoothClient
+from .sounds import SoundPackService
 from .system_tray import SystemTray
 from user_options import user_options
-
 bar_manager = None
 style_service = None
 toggleable_windows: dict[str, object] = {}
@@ -28,17 +30,21 @@ notifications = Notifications()
 bluetooth = BluetoothClient()
 player_manager = PlayerManager()
 power_profiles = PowerProfiles()
-theme_service = ThemeService()
+plugins = PluginService()
+theme_service = ThemePackService()
 wm = get_wm_service()
 battery = Battery()
 brightness = Brightness()
 edit_mode = EditMode()
 network = NetworkClient()
 weather = Weather()
+icon_pack = IconPackService()
 idle = SwayidleService(rules=user_options.timeouts.list)
+sound_packs = SoundPackService()
 timer = TimerService()
 process_monitor = ProcessMonitorService()
 night_mode = NightModeService()
 recorder = RecorderService()
 watcher = SystemTray()
+settings = None
 idle.start()

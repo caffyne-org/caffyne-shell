@@ -25,7 +25,7 @@ class BluetoothBatteryWidget(Box):
     def __init__(self, device: BluetoothDevice, **kwargs):
         self._device = device
 
-        self._icon  = Icon(icon_name="battery-full-duotone", icon_size=12)
+        self._icon  = Icon(icon_name="battery-full", icon_size=12)
         self._label = Label(label="", max_chars_width=4, ellipsize=True)
 
         super().__init__(
@@ -56,15 +56,15 @@ class BluetoothBatteryWidget(Box):
     @staticmethod
     def _get_battery_icon(pct: int) -> str:
         if pct > 80:
-            return "battery-vertical-full-duotone"
+            return "battery-vertical-full"
         elif pct > 60:
-            return "battery-vertical-high-duotone"
+            return "battery-vertical-high"
         elif pct > 40:
-            return "battery-vertical-medium-duotone"
+            return "battery-vertical-medium"
         elif pct > 20:
-            return "battery-vertical-low-duotone"
+            return "battery-vertical-low"
         else:
-            return "battery-vertical-warning-duotone"
+            return "battery-vertical-warning"
 
 
 class BluetoothIcon(Icon):
@@ -73,15 +73,15 @@ class BluetoothIcon(Icon):
 
     def _get_icon(self, device_type: str) -> str:
         return {
-            "Headset":    "headset-duotone",
-            "Headphones": "headphones-duotone",
-            "Speaker":    "speaker-hifi-duotone",
-            "Keyboard":   "keyboard-duotone",
-            "Mouse":      "mouse-duotone",
-            "Joypad":     "game-controller-duotone",
-            "Phone":      "device-mobile-camera-duotone",
-            "Printer":    "printer-duotone",
-        }.get(device_type, "bluetooth-duotone")
+            "Headset":    "headset",
+            "Headphones": "headphones",
+            "Speaker":    "speaker-hifi",
+            "Keyboard":   "keyboard",
+            "Mouse":      "mouse",
+            "Joypad":     "game-controller",
+            "Phone":      "device-mobile-camera",
+            "Printer":    "printer",
+        }.get(device_type, "bluetooth")
 
 
 def _build_device_menu(device: BluetoothDevice, event: Gdk.EventButton) -> None:
@@ -131,7 +131,7 @@ class BluetoothDeviceItem(Box):
 
         self._connect_attempted = False
 
-        self.status_icon = Icon(icon_name="plugs-duotone", icon_size=16)
+        self.status_icon = Icon(icon_name="plugs", icon_size=16)
 
         self.battery_widget = BluetoothBatteryWidget(device)
 
@@ -163,7 +163,7 @@ class BluetoothDeviceItem(Box):
         )
 
         self._dots_btn = Button(
-            child=Icon(icon_name="dots-three-outline-vertical-duotone", icon_size=16),
+            child=Icon(icon_name="dots-three-outline-vertical", icon_size=16),
             style_classes=["qs-device-item", "right"],
         )
         self._dots_btn.connect("button-press-event", self._open_context_menu)
@@ -254,28 +254,28 @@ class BluetoothDeviceItem(Box):
         if state == BTState.CONNECTED:
             self.content.add_style_class("active")
             self.status_icon.set_visible(True)
-            self.status_icon.icon_name = "plugs-connected-duotone"
+            self.status_icon.icon_name = "plugs-connected"
 
         elif state == BTState.CONNECTING:
             self.content.add_style_class("connecting")
             self.status_icon.set_visible(True)
-            self.status_icon.icon_name = "plugs-duotone"
+            self.status_icon.icon_name = "plugs"
 
         elif state == BTState.DISCONNECTING:
             self.content.add_style_class("disconnecting")
             self.status_icon.set_visible(True)
-            self.status_icon.icon_name = "plugs-duotone"
+            self.status_icon.icon_name = "plugs"
 
         elif state == BTState.FAILED:
             self.content.add_style_class("failed")
             self.status_icon.set_visible(True)
-            self.status_icon.icon_name = "plugs-duotone"
+            self.status_icon.icon_name = "plugs"
             GLib.timeout_add(5000, self._reset_from_failed)
 
         else:
             has_status = self.device.paired or self.device.trusted
             self.status_icon.set_visible(has_status)
-            self.status_icon.icon_name = "plugs-duotone"
+            self.status_icon.icon_name = "plugs"
 
     def _reset_from_failed(self):
         if not self._destroyed:
@@ -461,7 +461,7 @@ class BluetoothMenu(QSAppletPage):
         super().__init__(
             title="Bluetooth",
             stack=stack,
-            button_icon_name="arrows-clockwise-duotone",
+            button_icon_name="arrows-clockwise",
             button_action=lambda btn: self._scan(btn),
             child=self.tab_stack,
             switch=self.switch,
