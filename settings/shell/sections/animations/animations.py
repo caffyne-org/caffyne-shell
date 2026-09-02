@@ -89,11 +89,11 @@ class AnimationSettingsPage(AppPage):
                     title="Rendering",
                     items=[
                         SwitchRow(
-                            name="Shader Animations",
+                            name="Shader Animations (Restart Required)",
                             toggled=animation_service.get_shaders_enabled(),
                             on_toggle=lambda active: animation_service.set_shaders_enabled(active),
                         ),
-                        InfoRow(name="Takes effect", info="After restart"),
+                        # InfoRow(name="Takes effect", info="After restart"),
                     ],
                 ),
                 PageSection(
